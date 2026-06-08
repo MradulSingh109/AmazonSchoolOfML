@@ -982,6 +982,8 @@ async function handleRunBacktest() {
   const filename = document.getElementById('select-signal-backtest').value;
   const capital = document.getElementById('input-capital').value;
   const rf = document.getElementById('input-rf').value;
+  const sl = document.getElementById('input-sl').value;
+  const tp = document.getElementById('input-tp').value;
 
   if (!filename) {
     showBacktestStatus('error', 'Please select a signals dataset to run.');
@@ -999,7 +1001,9 @@ async function handleRunBacktest() {
       body: JSON.stringify({
         signal_filename: filename,
         initial_capital: capital,
-        risk_free_rate: rf / 100
+        risk_free_rate: rf / 100,
+        stop_loss: sl,
+        take_profit: tp
       })
     });
     const data = await res.json();
@@ -1167,7 +1171,7 @@ function renderTradesLog(trades) {
   const tbody = document.getElementById('table-body-trades');
   
   if (trades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">No trades executed in this backtest.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-secondary);">No trades executed in this backtest.</td></tr>`;
     return;
   }
 
@@ -1177,15 +1181,21 @@ function renderTradesLog(trades) {
     const returnSign = t.return > 0 ? '+' : '';
     const outcomeText = t.return > 0 ? 'WIN' : 'LOSS';
     const outcomeClass = t.return > 0 ? 'badge-green' : 'badge-red';
+    const entryPriceFormatted = t.entry_price !== undefined ? `₹${t.entry_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '—';
+    const exitPriceFormatted = t.exit_price !== undefined ? `₹${t.exit_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '—';
+    const exitCapitalFormatted = t.exit_capital !== undefined ? `₹${t.exit_capital.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}` : '—';
 
     return `
       <tr>
         <td>${i + 1}</td>
         <td style="font-weight:700; color:${t.direction === 'LONG' ? 'var(--accent-green)' : 'var(--accent-amber)'};">${t.direction}</td>
         <td>${t.entry_date}</td>
+        <td style="font-family:var(--font-mono); font-weight:600;">${entryPriceFormatted}</td>
         <td>${t.exit_date}</td>
+        <td style="font-family:var(--font-mono); font-weight:600;">${exitPriceFormatted}</td>
         <td class="${returnClass}" style="font-weight:700; font-family:var(--font-mono);">${returnSign}${returnVal}%</td>
         <td><span class="badge ${outcomeClass}">${outcomeText}</span></td>
+        <td style="font-family:var(--font-mono); font-weight:700; color:var(--text-primary);">${exitCapitalFormatted}</td>
       </tr>
     `;
   }).join('');

@@ -109,10 +109,27 @@ def generate_features(df: pd.DataFrame) -> pd.DataFrame:
     features_df['Return_5D'] = features_df['Close'].pct_change(5)
     features_df['Return_10D'] = features_df['Close'].pct_change(10)
 
+    # 6. High-Low Spread and Close Position in Range
+    features_df['HL_Spread'] = (features_df['High'] - features_df['Low']) / features_df['Close']
+    features_df['Close_Position'] = (features_df['Close'] - features_df['Low']) / (features_df['High'] - features_df['Low'] + 1e-9)
+
+    # 7. Lag Features (1-Day and 2-Day shifts) for core indicators
+    features_df['RSI_Lag_1'] = features_df['RSI'].shift(1)
+    features_df['RSI_Lag_2'] = features_df['RSI'].shift(2)
+    features_df['Return_1D_Lag_1'] = features_df['Return_1D'].shift(1)
+    features_df['Return_1D_Lag_2'] = features_df['Return_1D'].shift(2)
+    features_df['MACD_Lag_1'] = features_df['MACD'].shift(1)
+    features_df['MACD_Lag_2'] = features_df['MACD'].shift(2)
+    features_df['Vol_Ratio_Lag_1'] = features_df['Vol_Ratio'].shift(1)
+    features_df['Vol_Ratio_Lag_2'] = features_df['Vol_Ratio'].shift(2)
+
     # Round numeric columns for cleaner storage/viewing
     float_cols = [
         'EMA20', 'EMA50', 'EMA200', 'RSI', 'MACD', 'MACD_Signal', 'ROC',
-        'ATR', 'BB_Width', 'Vol_MA', 'Vol_Ratio', 'Return_1D', 'Return_5D', 'Return_10D'
+        'ATR', 'BB_Width', 'Vol_MA', 'Vol_Ratio', 'Return_1D', 'Return_5D', 'Return_10D',
+        'HL_Spread', 'Close_Position', 
+        'RSI_Lag_1', 'RSI_Lag_2', 'Return_1D_Lag_1', 'Return_1D_Lag_2',
+        'MACD_Lag_1', 'MACD_Lag_2', 'Vol_Ratio_Lag_1', 'Vol_Ratio_Lag_2'
     ]
     for col in float_cols:
         if col in features_df.columns:

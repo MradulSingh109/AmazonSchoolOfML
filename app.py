@@ -186,9 +186,14 @@ def api_train_model():
         split_idx = int(len(df) * 0.8)
         df_train = df.iloc[:split_idx].reset_index(drop=True)
 
-        # Define features (optimized subset to prevent overfitting)
+        # Define features (optimized subset with lags to prevent overfitting)
         feature_cols = [
-            'EMA50', 'RSI', 'MACD', 'ATR', 'Vol_Ratio', 'Return_1D'
+            'EMA50', 'RSI', 'MACD', 'ATR', 'Vol_Ratio', 'Return_1D',
+            'HL_Spread', 'Close_Position',
+            'RSI_Lag_1', 'RSI_Lag_2',
+            'Return_1D_Lag_1', 'Return_1D_Lag_2',
+            'MACD_Lag_1', 'MACD_Lag_2',
+            'Vol_Ratio_Lag_1', 'Vol_Ratio_Lag_2'
         ]
 
         # Ensure all columns are present
@@ -365,6 +370,8 @@ def api_run_backtest():
     signal_filename = data.get('signal_filename', '')
     risk_free_rate = float(data.get('risk_free_rate', 0.05))
     initial_capital = float(data.get('initial_capital', 100000.0))
+    stop_loss = float(data.get('stop_loss', 0.0)) / 100.0
+    take_profit = float(data.get('take_profit', 0.0)) / 100.0
 
     if not signal_filename:
         return jsonify({'success': False, 'message': 'Signal dataset filename is required.'})
@@ -378,7 +385,7 @@ def api_run_backtest():
         df = pd.read_csv(signal_filepath)
 
         # Run backtester
-        results = run_backtest(df, risk_free_rate, initial_capital)
+        results = run_backtest(df, risk_free_rate, initial_capital, stop_loss, take_profit)
 
         return jsonify({
             'success': True,

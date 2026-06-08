@@ -24,11 +24,13 @@ def ensure_data_dir():
 
 
 def get_nse_ticker(symbol: str) -> str:
-    """Convert a plain stock symbol to NSE Yahoo Finance ticker format."""
+    """Convert a stock symbol to Yahoo Finance ticker format, preserving global tickers."""
     symbol = symbol.strip().upper()
-    if not symbol.endswith('.NS'):
-        symbol += '.NS'
-    return symbol
+    # If the symbol has a suffix or special characters, leave it as is
+    if any(char in symbol for char in ['.', '=', '-', '^']) or symbol in ['GLD', 'SLV', 'SPY', 'QQQ', 'BTC', 'ETH']:
+        return symbol
+    # Default to NSE stock
+    return symbol + '.NS'
 
 
 def download_stock_data(symbol: str, start_date: str, end_date: str) -> dict:

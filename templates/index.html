@@ -48,15 +48,15 @@
       <div id="page-data" class="page-section">
         <header class="page-header">
           <h1>Data Collection</h1>
-          <p>Download OHLCV market data from Yahoo Finance for NSE-listed stocks</p>
+          <p>Download OHLCV market data from Yahoo Finance (supports NSE stocks, Forex, Commodities, Crypto, and global indices)</p>
         </header>
 
         <!-- Download Form Card -->
         <section class="card section-gap">
           <div class="card-header">
             <div>
-              <h2>Download Stock Data</h2>
-              <span>Enter a stock symbol and date range to fetch historical data</span>
+              <h2>Download Asset Data</h2>
+              <span>Enter an asset symbol and date range to fetch historical data</span>
             </div>
           </div>
 
@@ -65,19 +65,17 @@
             <span class="label">Popular:</span>
             <span class="chip" data-symbol="RELIANCE">RELIANCE</span>
             <span class="chip" data-symbol="TCS">TCS</span>
-            <span class="chip" data-symbol="INFY">INFY</span>
             <span class="chip" data-symbol="HDFCBANK">HDFCBANK</span>
-            <span class="chip" data-symbol="ICICIBANK">ICICIBANK</span>
-            <span class="chip" data-symbol="WIPRO">WIPRO</span>
-            <span class="chip" data-symbol="SBIN">SBIN</span>
-            <span class="chip" data-symbol="TATAMOTORS">TATAMOTORS</span>
+            <span class="chip" data-symbol="GC=F">Gold (GC=F)</span>
+            <span class="chip" data-symbol="^GSPC">S&P 500 (^GSPC)</span>
+            <span class="chip" data-symbol="BTC-USD">Bitcoin (BTC-USD)</span>
           </div>
 
           <!-- Form -->
           <div class="form-grid">
             <div class="form-group">
-              <label for="input-symbol">Stock Symbol (NSE)</label>
-              <input type="text" id="input-symbol" placeholder="e.g. RELIANCE" autocomplete="off" />
+              <label for="input-symbol">Asset Symbol</label>
+              <input type="text" id="input-symbol" placeholder="e.g. RELIANCE, XAUUSD=X, BTC-USD" autocomplete="off" />
             </div>
             <div class="form-group">
               <label for="input-start">Start Date</label>
@@ -429,7 +427,7 @@
             </div>
           </div>
 
-          <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr;">
+          <div class="form-grid" style="grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1fr;">
             <div class="form-group">
               <label for="select-signal-backtest">Select Signals Dataset</label>
               <select id="select-signal-backtest">
@@ -443,6 +441,14 @@
             <div class="form-group">
               <label for="input-rf">Risk-Free Rate (%)</label>
               <input type="number" id="input-rf" value="5.0" min="0.0" max="25.0" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label for="input-sl">Stop Loss (%)</label>
+              <input type="number" id="input-sl" value="1.0" min="0.0" max="20.0" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label for="input-tp">Take Profit (%)</label>
+              <input type="number" id="input-tp" value="6.0" min="0.0" max="50.0" step="0.1" />
             </div>
           </div>
 
@@ -505,9 +511,12 @@
                     <th>Trade #</th>
                     <th>Direction</th>
                     <th>Entry Date</th>
+                    <th>Entry Price</th>
                     <th>Exit Date</th>
+                    <th>Exit Price</th>
                     <th>Return (%)</th>
                     <th>Outcome</th>
+                    <th>Capital Balance</th>
                   </tr>
                 </thead>
                 <tbody id="table-body-trades">
