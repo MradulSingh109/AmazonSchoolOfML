@@ -20,14 +20,14 @@ def train_xgboost(
     feature_cols: list, 
     target_col: str = 'Target',
     n_splits: int = 5,
-    n_estimators: int = 120,
-    max_depth: int = 2,
+    n_estimators: int = 250,
+    max_depth: int = 1,
     learning_rate: float = 0.02,
-    subsample: float = 0.6,
-    colsample_bytree: float = 0.6,
-    min_child_weight: int = 20,
-    reg_alpha: float = 1.0,
-    reg_lambda: float = 5.0
+    subsample: float = 0.5,
+    colsample_bytree: float = 0.5,
+    min_child_weight: int = 25,
+    reg_alpha: float = 5.0,
+    reg_lambda: float = 15.0
 ) -> dict:
     """
     Train a highly regularized XGBoost model using TimeSeriesSplit validation.

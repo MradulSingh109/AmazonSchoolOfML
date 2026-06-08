@@ -20,10 +20,10 @@ def train_random_forest(
     feature_cols: list, 
     target_col: str = 'Target',
     n_splits: int = 5,
-    n_estimators: int = 150,
+    n_estimators: int = 200,
     max_depth: int = 4,
-    min_samples_leaf: int = 30,
-    min_samples_split: int = 50
+    min_samples_leaf: int = 100,
+    min_samples_split: int = 100
 ) -> dict:
     """
     Train a highly regularized Random Forest model using TimeSeriesSplit validation.

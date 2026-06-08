@@ -20,7 +20,10 @@ def train_logistic_regression(
     df: pd.DataFrame, 
     feature_cols: list, 
     target_col: str = 'Target',
-    n_splits: int = 5
+    n_splits: int = 5,
+    C: float = 0.01,
+    penalty: str = 'l2',
+    solver: str = 'lbfgs'
 ) -> dict:
     """
     Train a Logistic Regression model using TimeSeriesSplit validation.
@@ -59,7 +62,13 @@ def train_logistic_regression(
         X_val_scaled = scaler_cv.transform(X_val_cv)
 
         # Train model
-        model_cv = LogisticRegression(max_iter=1000, random_state=42)
+        model_cv = LogisticRegression(
+            C=C,
+            penalty=penalty,
+            solver=solver,
+            max_iter=1000,
+            random_state=42
+        )
         model_cv.fit(X_train_scaled, y_train_cv)
 
         # Predict
@@ -80,7 +89,13 @@ def train_logistic_regression(
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    final_model = LogisticRegression(max_iter=1000, random_state=42)
+    final_model = LogisticRegression(
+        C=C,
+        penalty=penalty,
+        solver=solver,
+        max_iter=1000,
+        random_state=42
+    )
     final_model.fit(X_scaled, y)
 
     # Final predictions & probabilities on the training set (for training metrics)

@@ -182,25 +182,28 @@ def api_train_model():
         # Load dataset
         df = pd.read_csv(features_path)
 
-        # Define features
+        # Chronological train-test split (80% train, 20% test to prevent data leakage)
+        split_idx = int(len(df) * 0.8)
+        df_train = df.iloc[:split_idx].reset_index(drop=True)
+
+        # Define features (optimized subset to prevent overfitting)
         feature_cols = [
-            'EMA20', 'EMA50', 'EMA200', 'RSI', 'MACD', 'MACD_Signal', 'ROC',
-            'ATR', 'BB_Width', 'Vol_MA', 'Vol_Ratio', 'Return_1D', 'Return_5D', 'Return_10D'
+            'EMA50', 'RSI', 'MACD', 'ATR', 'Vol_Ratio', 'Return_1D'
         ]
 
         # Ensure all columns are present
-        missing_cols = [col for col in feature_cols if col not in df.columns]
+        missing_cols = [col for col in feature_cols if col not in df_train.columns]
         if missing_cols:
             return jsonify({'success': False, 'message': f'Missing feature columns: {missing_cols}'})
 
-        # Train model based on type
+        # Train model based on type (using df_train)
         result = {}
         if model_type == 'logistic_regression':
-            result = train_logistic_regression(df, feature_cols)
+            result = train_logistic_regression(df_train, feature_cols)
         elif model_type == 'random_forest':
-            result = train_random_forest(df, feature_cols)
+            result = train_random_forest(df_train, feature_cols)
         elif model_type == 'xgboost':
-            result = train_xgboost(df, feature_cols)
+            result = train_xgboost(df_train, feature_cols)
         else:
             return jsonify({'success': False, 'message': f'Unknown model type: {model_type}'})
 
@@ -284,8 +287,12 @@ def api_generate_signals():
         # Load dataset
         df = pd.read_csv(features_path)
 
-        # Generate signals
-        signal_df = generate_signals(df, model_path, threshold, short_style)
+        # Subset to the 20% out-of-sample test split chronologically
+        split_idx = int(len(df) * 0.8)
+        df_test = df.iloc[split_idx:].reset_index(drop=True)
+
+        # Generate signals on the unseen test set
+        signal_df = generate_signals(df_test, model_path, threshold, short_style)
 
         # Save to processed signals file
         signal_filename = f"{symbol}_signals.csv"
