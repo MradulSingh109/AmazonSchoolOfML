@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import DataCollection from './pages/DataCollection';
 import FeatureEngineering from './pages/FeatureEngineering';
 import MLModels from './pages/MLModels';
@@ -8,7 +9,12 @@ import ShapAnalysis from './pages/ShapAnalysis';
 import './App.css';
 
 export default function App() {
-  const [activePage, setActivePage] = useState('data');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Extract active page from URL path (e.g. '/features' -> 'features')
+  const activePage = location.pathname.substring(1) || 'data';
+
   const [serverOnline, setServerOnline] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -36,26 +42,6 @@ export default function App() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  // Render Page Content based on Active Sidebar Choice
-  const renderActivePage = () => {
-    switch (activePage) {
-      case 'data':
-        return <DataCollection onStockDownloaded={triggerRefresh} />;
-      case 'features':
-        return <FeatureEngineering refreshTrigger={refreshTrigger} />;
-      case 'models':
-        return <MLModels refreshTrigger={refreshTrigger} />;
-      case 'signals':
-        return <SignalGeneration refreshTrigger={refreshTrigger} />;
-      case 'backtest':
-        return <Backtesting refreshTrigger={refreshTrigger} />;
-      case 'shap':
-        return <ShapAnalysis refreshTrigger={refreshTrigger} />;
-      default:
-        return <DataCollection onStockDownloaded={triggerRefresh} />;
-    }
-  };
-
   const navItems = [
     { id: 'data', label: 'Data Collection', abbr: 'DC' },
     { id: 'features', label: 'Feature Engineering', abbr: 'FE' },
@@ -77,7 +63,7 @@ export default function App() {
             <div
               key={item.id}
               className={`nav-item ${activePage === item.id ? 'active' : ''}`}
-              onClick={() => setActivePage(item.id)}
+              onClick={() => navigate(`/${item.id}`)}
             >
               <span className="nav-icon">{item.abbr}</span>
               <span className="nav-label">{item.label}</span>
@@ -98,7 +84,18 @@ export default function App() {
       </aside>
 
       {/* Main Content View */}
-      <main className="main-content">{renderActivePage()}</main>
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/data" replace />} />
+          <Route path="/data" element={<DataCollection onStockDownloaded={triggerRefresh} />} />
+          <Route path="/features" element={<FeatureEngineering refreshTrigger={refreshTrigger} />} />
+          <Route path="/models" element={<MLModels refreshTrigger={refreshTrigger} />} />
+          <Route path="/signals" element={<SignalGeneration refreshTrigger={refreshTrigger} />} />
+          <Route path="/backtest" element={<Backtesting refreshTrigger={refreshTrigger} />} />
+          <Route path="/shap" element={<ShapAnalysis refreshTrigger={refreshTrigger} />} />
+          <Route path="*" element={<Navigate to="/data" replace />} />
+        </Routes>
+      </main>
     </div>
   );
 }
