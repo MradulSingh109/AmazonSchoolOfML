@@ -1,0 +1,148 @@
+# QuantML Research Platform: Pipeline Walkthrough
+
+This document traces the step-by-step execution flow of the Quantitative Machine Learning pipeline in the workspace, mapping frontend API requests to backend endpoints, router handlers, and core computational functions.
+
+---
+
+## Architecture Overview
+
+```mermaid
+graph TD
+    A[Frontend UI / Client] -->|POST /api/download| B[Data Collection]
+    B -->|Saves CSV to data/raw/| C[Feature Engineering & Target Generation]
+    C -->|POST /api/features/process| C
+    C -->|Saves CSV to data/processed/| D[Model Training & Validation]
+    D -->|POST /api/models/train| D
+    D -->|Saves PKL to models/| E[Explainability SHAP]
+    D -->|Saves PKL to models/| F[Signal Generation]
+    E -->|POST /api/explain| E
+    F -->|POST /api/signals/generate| F
+    F -->|Saves CSV to data/processed/| G[Backtesting Engine]
+    G -->|POST /api/backtest/run| G
+    G -->|Returns Metrics & Trades| A
+```
+
+---
+
+## 1. Data Collection (Phase 1)
+Downloads historical OHLCV (Open, High, Low, Close, Volume) data from Yahoo Finance for a given ticker symbol.
+
+*   **API Endpoint:** `POST /api/download`
+*   **API Router Handler:** [data.py:L7-16](file:///d:/AmazonSchoolOfML/backend/app/api/data.py#L7-16) -> `api_download(payload)`
+*   **Core Implementation Function:** [data_loader.py:L36-133](file:///d:/AmazonSchoolOfML/backend/app/core/data/data_loader.py#L36-133) -> `download_stock_data(symbol, start_date, end_date)`
+*   **Workflow:**
+    1. Calls `ensure_data_dir()` to verify the raw data directory exists (`data/raw`).
+    2. Converts the stock symbol to a Yahoo Finance ticker format using `get_nse_ticker(symbol)` (appending `.NS` if it is an Indian stock and not a global indicator/commodity).
+    3. Downloads history via `yf.download(ticker, start, end)`.
+    4. Cleans up MultiIndex columns if present, resets index, and formats dates.
+    5. Saves raw data as a CSV to `data/raw/{symbol}.csv`.
+    6. Generates basic statistics (min/max price, CAGR return, average volume) and returns a data preview.
+
+---
+
+## 2. Feature Engineering (Phase 2)
+Calculates technical indicators across trend, momentum, volatility, volume, and return categories to build the feature matrix.
+
+*   **API Endpoint:** `POST /api/features/process`
+*   **API Router Handler:** [features.py:L11-80](file:///d:/AmazonSchoolOfML/backend/app/api/features.py#L11-80) -> `api_process_features(payload)`
+*   **Core Implementation Function:** [feature_engineering.py:L71-138](file:///d:/AmazonSchoolOfML/backend/app/core/features/feature_engineering.py#L71-138) -> `generate_features(df)`
+*   **Workflow:**
+    1. Loads the downloaded raw CSV from `data/raw/{symbol}.csv`.
+    2. Performs time-series feature calculation:
+        *   **Trend:** EMA20, EMA50, EMA200 (normalized as % deviation from Close price) via `calculate_ema(df, span)`.
+        *   **Momentum:** RSI via `calculate_rsi(df, period)`, MACD/MACD Signal via `calculate_macd(df)`, and ROC via `calculate_roc(df, period)`.
+        *   **Volatility:** ATR via `calculate_atr(df)` and Bollinger Band Width via `calculate_bollinger_width(df)`.
+        *   **Volume:** Volume MA and Volume Ratio.
+        *   **Returns:** 1-day, 5-day, and 10-day price returns.
+        *   **Lags:** 1-day and 2-day lags of RSI, MACD, Volume Ratio, and Return.
+
+---
+
+## 3. Target Generation (Phase 3)
+Generates the binary classification label representing direction of movement for the machine learning models.
+
+*   **API Endpoint:** Evaluated inside the Feature Engineering processing endpoint `POST /api/features/process`.
+*   **API Router Handler:** [features.py:L29](file:///d:/AmazonSchoolOfML/backend/app/api/features.py#L29)
+*   **Core Implementation Function:** [target_generation.py:L13-38](file:///d:/AmazonSchoolOfML/backend/app/core/features/target_generation.py#L13-38) -> `generate_target(df)`
+*   **Workflow:**
+    1. Creates the target label by shifting the daily `Close` price backward by 1 day (`Close.shift(-1)`).
+    2. Defines `Target` as `1` if the next day's close price is higher than today's close price, and `0` otherwise.
+    3. Cleans up rolling NaN values (from Indicators/Lags) and saves the combined features and target dataframe to `data/processed/{symbol}_features.csv`.
+
+---
+
+## 4. Model Training & Validation (Phases 4 & 5)
+Trains standard supervised classification models on the engineered training set and computes cross-validation metrics.
+
+*   **API Endpoint:** `POST /api/models/train`
+*   **API Router Handler:** [models.py:L22-88](file:///d:/AmazonSchoolOfML/backend/app/api/models.py#L22-88) -> `api_train_model(payload)`
+*   **Core Implementation Functions:**
+    *   **Logistic Regression:** [logistic_regression.py:L19-136](file:///d:/AmazonSchoolOfML/backend/app/core/models/logistic_regression.py#L19-136) -> `train_logistic_regression(df_train, feature_cols)`
+    *   **Random Forest:** [random_forest.py:L18-134](file:///d:/AmazonSchoolOfML/backend/app/core/models/random_forest.py#L18-134) -> `train_random_forest(df_train, feature_cols)`
+    *   **XGBoost:** [xgboost_model.py:L18-150](file:///d:/AmazonSchoolOfML/backend/app/core/models/xgboost_model.py#L18-150) -> `train_xgboost(df_train, feature_cols)`
+*   **Workflow:**
+    1. Loads processed features CSV from `data/processed/{symbol}_features.csv`.
+    2. Splits data chronologically: the first **80%** of data is used for training/validation, and the remaining **20%** is completely held out (OOS) for subsequent out-of-sample signal generation.
+    3. Performs `TimeSeriesSplit` cross-validation (5 splits) on the 80% training slice.
+    4. Scales features if using Logistic Regression (via `StandardScaler`).
+    5. Fits the model, evaluates validation metrics (Accuracy, Precision, Recall, F1, AUC), and computes feature importances.
+    6. Fits the final model on the entire 80% training set.
+    7. Saves the trained model, standard scaler (if applicable), features list, and training metrics in a serialized pickle file at `models/{symbol}_{model_type}.pkl`.
+
+---
+
+## 5. Model Explainability (Phase 8)
+Extracts SHAP (SHapley Additive exPlanations) values to interpret feature impacts on the model's predictions.
+
+*   **API Endpoint:** `POST /api/explain`
+*   **API Router Handler:** [explain.py:L10-44](file:///d:/AmazonSchoolOfML/backend/app/api/explain.py#L10-44) -> `api_explain_model(payload)`
+*   **Core Implementation Function:** [shap_explainer.py:L18-136](file:///d:/AmazonSchoolOfML/backend/app/core/explainability/shap_explainer.py#L18-136) -> `calculate_shap_values(df, model_path, max_samples)`
+*   **Workflow:**
+    1. Loads the processed dataset and the pickled model metadata.
+    2. Takes the latest `max_samples` (default: 250) to capture current regime impacts.
+    3. Initializes the SHAP explainer depending on the model architecture:
+        *   `shap.TreeExplainer(model)` for tree models (Random Forest, XGBoost).
+        *   `shap.Explainer(model, X_scaled)` or `shap.LinearExplainer` for linear models.
+    4. Calculates the SHAP values, extracting the impact for class `1` (BUY).
+    5. Normalizes raw feature values and returns coordinates for Beeswarm chart plotting.
+
+---
+
+## 6. Trading Signal Generation (Phase 6)
+Applies the trained model to out-of-sample data (unseen test set) to make daily probabilistic forecasts and turn them into trade commands.
+
+*   **API Endpoint:** `POST /api/signals/generate`
+*   **API Router Handler:** [signals.py:L10-93](file:///d:/AmazonSchoolOfML/backend/app/api/signals.py#L10-93) -> `api_generate_signals(payload)`
+*   **Core Implementation Function:** [signal_generator.py:L16-78](file:///d:/AmazonSchoolOfML/backend/app/core/signals/signal_generator.py#L16-78) -> `generate_signals(df, model_path, threshold, short_style)`
+*   **Workflow:**
+    1. Loads the model file and features dataframe.
+    2. Subsets the features to the remaining **20%** out-of-sample data (`df.iloc[split_idx:]`).
+    3. Transforms the test features using the saved scaler (if any).
+    4. Generates predictions using `model.predict_proba(X)[:, 1]`.
+    5. Applies the decision threshold (e.g., probability > `0.55` = BUY signal (`1`)).
+    6. For probabilities below the threshold, assigns `0` (flat) or `-1` (short) based on the user-selected `short_style`.
+    7. Calculates the daily difference in positions to track changes/orders (`Position_Change`).
+    8. Saves signals to `data/processed/{symbol}_signals.csv`.
+
+---
+
+## 7. Backtesting Simulation (Phase 7)
+Simulates execution of generated signals with realistic portfolio constraints like Stop-Loss and Take-Profit limits.
+
+*   **API Endpoint:** `POST /api/backtest/run`
+*   **API Router Handler:** [backtest.py:L10-53](file:///d:/AmazonSchoolOfML/backend/app/api/backtest.py#L10-53) -> `api_run_backtest(payload)`
+*   **Core Implementation Function:** [backtester.py:L17-241](file:///d:/AmazonSchoolOfML/backend/app/core/backtesting/backtester.py#L17-241) -> `run_backtest(df, risk_free_rate, initial_capital, stop_loss_pct, take_profit_pct)`
+*   **Workflow:**
+    1. Loads signals dataframe from `data/processed/{signal_filename}`.
+    2. Shifts the signal column forward by 1 day (`Signal.shift(1)`) to avoid **look-ahead bias** (ensures today's trade uses yesterday's signal).
+    3. Iterates day-by-day to simulate portfolio values:
+        *   If flat (`current_position == 0`) and `Signal_Shifted != 0`, enters a new trade using the previous day's close price as the entry price.
+        *   For active positions, tracks daily PnL relative to the entry price.
+        *   Checks daily whether the Stop-Loss (`stop_loss_pct`) or Take-Profit (`take_profit_pct`) thresholds are breached. If breached, records the exit trade and marks the position as stopped out/flat.
+        *   If a signal change is triggered (e.g., LONG changes to FLAT or SHORT), exits the trade.
+    4. Calculates standard performance metrics:
+        *   **Strategy Return vs. Stock Return** (Buy and Hold).
+        *   **Annualized Sharpe Ratio** (assuming 252 trading days/year, using the provided risk-free rate).
+        *   **Maximum Drawdown (MDD)** for both strategy and asset.
+        *   **Trade-Level Metrics:** Trade count, win rate, and average return per trade.
+    5. Returns metrics, trade list, and equity curve data to the frontend for charting.
