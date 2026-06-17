@@ -23,7 +23,7 @@ export default function DataCollection({ onStockDownloaded }) {
 
   const fetchStocks = async () => {
     try {
-      const res = await fetch('/api/stocks');
+      const res = await fetch('/api/stocks'); // Hits the endpoint in backend/app/api/data.py
       const data = await res.json();
       if (data.success) {
         setStocks(data.stocks);

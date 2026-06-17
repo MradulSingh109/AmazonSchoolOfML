@@ -11,6 +11,8 @@ class ProcessFeaturesRequest(BaseModel):
 class TrainModelRequest(BaseModel):
     symbol: str = Field(..., description="Symbol of processed dataset to train on")
     model_type: str = Field(..., description="Model algorithm: logistic_regression, random_forest, or xgboost")
+    hyperparameters: dict = Field(default={}, description="Optional dictionary of model-specific hyperparameters")
+    regime_aware: bool = Field(default=False, description="Whether to train separate models for each detected market regime")
 
 class GenerateSignalsRequest(BaseModel):
     symbol: str = Field(..., description="Symbol of dataset to predict on")
@@ -28,3 +30,8 @@ class RunBacktestRequest(BaseModel):
 class ExplainRequest(BaseModel):
     symbol: str = Field(..., description="Symbol of dataset to explain")
     model_filename: str = Field(..., description="Model filename to calculate SHAP values for")
+
+class DetectRegimeRequest(BaseModel):
+    symbol: str = Field(..., description="Stock symbol to detect regimes for")
+    n_regimes: int = Field(default=3, ge=2, le=5, description="Number of clusters/states to segment")
+    method: str = Field(default="gmm", description="Clustering algorithm: 'gmm' or 'kmeans'")

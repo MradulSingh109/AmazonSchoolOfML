@@ -68,6 +68,32 @@ def calculate_bollinger_width(df: pd.DataFrame, period: int = 20, num_std: float
     return upper_band - lower_band
 
 
+def calculate_adx(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Calculate Average Directional Index (ADX) using Wilder's smoothing."""
+    high_diff = df['High'].diff()
+    low_diff = -df['Low'].diff()
+    
+    plus_dm = np.where((high_diff > low_diff) & (high_diff > 0), high_diff, 0.0)
+    minus_dm = np.where((low_diff > high_diff) & (low_diff > 0), low_diff, 0.0)
+    
+    high_low = df['High'] - df['Low']
+    high_close = (df['High'] - df['Close'].shift()).abs()
+    low_close = (df['Low'] - df['Close'].shift()).abs()
+    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+    
+    # Wilder's smoothing using ewm
+    tr_smoothed = tr.ewm(alpha=1/period, adjust=False).mean()
+    plus_dm_smoothed = pd.Series(plus_dm).ewm(alpha=1/period, adjust=False).mean()
+    minus_dm_smoothed = pd.Series(minus_dm).ewm(alpha=1/period, adjust=False).mean()
+    
+    plus_di = 100 * (plus_dm_smoothed / (tr_smoothed + 1e-9))
+    minus_di = 100 * (minus_dm_smoothed / (tr_smoothed + 1e-9))
+    
+    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di + 1e-9)
+    adx = dx.ewm(alpha=1/period, adjust=False).mean()
+    return adx
+
+
 def generate_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Generate the full matrix of features.
@@ -123,13 +149,26 @@ def generate_features(df: pd.DataFrame) -> pd.DataFrame:
     features_df['Vol_Ratio_Lag_1'] = features_df['Vol_Ratio'].shift(1)
     features_df['Vol_Ratio_Lag_2'] = features_df['Vol_Ratio'].shift(2)
 
+    # 8. Regime-Specific Features (used for clustering, prefix 'Regime_')
+    ema50_raw = calculate_ema(features_df, 50)
+    ema200_raw = calculate_ema(features_df, 200)
+    features_df['Regime_Trend_Strength'] = (ema50_raw - ema200_raw) / (ema200_raw + 1e-9)
+    features_df['Regime_Return_5D'] = features_df['Return_5D']
+    features_df['Regime_Return_20D'] = features_df['Close'].pct_change(20)
+    features_df['Regime_Volatility'] = features_df['Return_1D'].rolling(window=20).std()
+    features_df['Regime_ATR'] = features_df['ATR']
+    features_df['Regime_BB_Width'] = features_df['BB_Width']
+    features_df['Regime_ADX'] = calculate_adx(features_df, 14)
+
     # Round numeric columns for cleaner storage/viewing
     float_cols = [
         'EMA20', 'EMA50', 'EMA200', 'RSI', 'MACD', 'MACD_Signal', 'ROC',
         'ATR', 'BB_Width', 'Vol_MA', 'Vol_Ratio', 'Return_1D', 'Return_5D', 'Return_10D',
         'HL_Spread', 'Close_Position', 
         'RSI_Lag_1', 'RSI_Lag_2', 'Return_1D_Lag_1', 'Return_1D_Lag_2',
-        'MACD_Lag_1', 'MACD_Lag_2', 'Vol_Ratio_Lag_1', 'Vol_Ratio_Lag_2'
+        'MACD_Lag_1', 'MACD_Lag_2', 'Vol_Ratio_Lag_1', 'Vol_Ratio_Lag_2',
+        'Regime_Trend_Strength', 'Regime_Return_5D', 'Regime_Return_20D',
+        'Regime_Volatility', 'Regime_ATR', 'Regime_BB_Width', 'Regime_ADX'
     ]
     for col in float_cols:
         if col in features_df.columns:

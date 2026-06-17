@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
 
-export default function AnalyticsChart({ type, data, options = {}, height = 300 }) {
+export default function AnalyticsChart({ type, data, options = {}, plugins = [], height = 300 }) {
   const canvasRef = useRef(null);
   const chartInstanceRef = useRef(null);
 
@@ -114,6 +114,7 @@ export default function AnalyticsChart({ type, data, options = {}, height = 300 
       type,
       data,
       options: mergedOptions,
+      plugins,
     });
 
     return () => {
@@ -122,7 +123,7 @@ export default function AnalyticsChart({ type, data, options = {}, height = 300 
         chartInstanceRef.current = null;
       }
     };
-  }, [data, type, options]);
+  }, [data, type, options, plugins]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: `${height}px` }}>

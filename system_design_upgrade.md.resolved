@@ -1,0 +1,35 @@
+# System Design Upgrade Plan: QuantML Research Platform
+
+This plan outlines the enhancements to bring the QuantML Research Platform to production and deployment grade, focusing on scalability, asynchronous request processing, reliability, clean architecture, and containerized deployment.
+
+## Key Improvements
+
+### 1. Robust Configuration Management
+*   **Current State**: Hardcoded paths and directories in `app/config.py`.
+*   **Proposed State**: Migrate config to utilize environment variables via `pydantic-settings` (with a `.env` template). Introduce configurations for:
+    *   Server settings (host, port, reload, workers).
+    *   Logging directory, formats, and levels.
+    *   Data storage paths (Raw, Processed, Models).
+
+### 2. Structured & Persistent Logging
+*   **Current State**: Simple print statements (or no output) during data processing, model training, and backtesting.
+*   **Proposed State**: Introduce a global structured logger configuration under `app/core/logging.py`.
+    *   Set up console logging and rotating file logging (`logs/quantml_backend.log`).
+    *   Log API request ingress/egress, critical milestones (e.g., successful model training, feature size calculation), and debug-level execution paths.
+
+### 3. Asynchronous & Non-Blocking Request Execution
+*   **Current State**: CPU-bound operations (training XGBoost/RF, running GMM, calculating SHAP values) run in the main FastAPI thread, blocking the event loop.
+*   **Proposed State**: Offload CPU-heavy operations to FastAPI background tasks or run them in a separate thread pool using Python's standard `asyncio.to_thread` or `loop.run_in_executor`. This ensures that FastAPI can concurrent-process incoming telemetry or API requests without lockups.
+
+### 4. API Versioning & Global Exception Handling
+*   **Current State**: Endpoints mounted directly on `/api/...` with basic error catch blocks.
+*   **Proposed State**:
+    *   Establish API versioning by mounting routers under `/api/v1/...` in `app/main.py`, while keeping `/api/...` as a fallback routing layer to preserve frontend compatibility.
+    *   Implement global exception handling middleware in FastAPI to convert unhandled exceptions into structured JSON error models.
+
+### 5. Dockerization & Deployment Grade Infrastructure
+*   **Current State**: Application relies on manual setup of python/nodejs environments and local running servers (`run.py` and `npm run dev`).
+*   **Proposed State**:
+    *   Create a production-grade multi-stage `Dockerfile` for the FastAPI backend (using Uvicorn/Gunicorn with multiple workers).
+    *   Create a container configuration for the React frontend (running Vite production build served by Nginx or static file serving).
+    *   Implement a root-level `docker-compose.yml` that orchestrates both backend and frontend containers, maps local volume storage for data persistence, and establishes unified port routing.

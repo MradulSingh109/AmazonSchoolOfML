@@ -38,48 +38,81 @@ def calculate_shap_values(
     with open(model_path, 'rb') as f:
         model_data = pickle.load(f)
 
+    regime_aware = model_data.get('regime_aware', False)
     model = model_data['model']
     scaler = model_data.get('scaler', None)
     feature_cols = model_data['feature_cols']
 
-    # Select the latest rows for explainability (since time-series shifts regiemes)
+    # Select the latest rows for explainability (since time-series shifts regimes)
     analysis_df = df.tail(max_samples).copy().reset_index(drop=True)
     X = analysis_df[feature_cols].values
 
-    # Scale features if scaler exists
-    if scaler is not None:
-        X_scaled = scaler.transform(X)
-    else:
-        X_scaled = X
-
     # Initialize Explainer based on model class
-    model_classname = model.__class__.__name__
-    
     try:
-        if "XGB" in model_classname or "RandomForest" in model_classname:
-            explainer = shap.TreeExplainer(model)
-            # TreeExplainer might output shape (N, D, 2) for classification.
-            # We take the values for class 1 (BUY / UP).
-            raw_shap = explainer.shap_values(X_scaled)
-            
-            if isinstance(raw_shap, list):
-                # For some sklearn versions, TreeExplainer returns a list of arrays [class_0, class_1]
-                shap_values = raw_shap[1]
-            elif isinstance(raw_shap, np.ndarray) and len(raw_shap.shape) == 3:
-                # Array of shape (N, D, 2)
-                shap_values = raw_shap[:, :, 1]
-            else:
-                shap_values = raw_shap
+        if regime_aware:
+            models_dict = model
+            scalers_dict = scaler or {}
+            shap_values = np.zeros_like(X, dtype=float)
+
+            if 'Regime_Cluster' not in analysis_df.columns:
+                raise ValueError("Regime_Cluster column is missing from the dataset. Please run Regime Detection first.")
+
+            for r, sub_model in models_dict.items():
+                idx_r = analysis_df[analysis_df['Regime_Cluster'] == r].index.tolist()
+                if not idx_r:
+                    continue
+
+                X_r = X[idx_r]
+                scaler_r = scalers_dict.get(r, None)
+                X_r_scaled = scaler_r.transform(X_r) if scaler_r is not None else X_r
+
+                try:
+                    sub_model_classname = sub_model.__class__.__name__
+                    if "XGB" in sub_model_classname or "RandomForest" in sub_model_classname:
+                        explainer = shap.TreeExplainer(sub_model)
+                        raw_shap = explainer.shap_values(X_r_scaled)
+                        if isinstance(raw_shap, list):
+                            shap_values_r = raw_shap[1]
+                        elif isinstance(raw_shap, np.ndarray) and len(raw_shap.shape) == 3:
+                            shap_values_r = raw_shap[:, :, 1]
+                        else:
+                            shap_values_r = raw_shap
+                    else:
+                        explainer = shap.Explainer(sub_model, X_r_scaled)
+                        explanation = explainer(X_r_scaled)
+                        shap_values_r = explanation.values if hasattr(explanation, "values") else explanation
+
+                    if len(shap_values_r.shape) == 3:
+                        shap_values_r = shap_values_r[:, :, 1]
+
+                    shap_values[idx_r] = shap_values_r
+                except Exception as sub_err:
+                    print(f"SHAP computation skipped for regime {r}: {sub_err}")
+
+            model_classname = "RegimeAwareEnsemble"
         else:
-            # Fallback for Logistic Regression / general models
-            # We use shap.Explainer or shap.LinearExplainer
-            explainer = shap.Explainer(model, X_scaled)
-            explanation = explainer(X_scaled)
-            # Support explanation object or raw values
-            if hasattr(explanation, "values"):
-                shap_values = explanation.values
+            # Scale features if scaler exists
+            if scaler is not None:
+                X_scaled = scaler.transform(X)
             else:
-                shap_values = explanation
+                X_scaled = X
+
+            model_classname = model.__class__.__name__
+
+            if "XGB" in model_classname or "RandomForest" in model_classname:
+                explainer = shap.TreeExplainer(model)
+                raw_shap = explainer.shap_values(X_scaled)
+                
+                if isinstance(raw_shap, list):
+                    shap_values = raw_shap[1]
+                elif isinstance(raw_shap, np.ndarray) and len(raw_shap.shape) == 3:
+                    shap_values = raw_shap[:, :, 1]
+                else:
+                    shap_values = raw_shap
+            else:
+                explainer = shap.Explainer(model, X_scaled)
+                explanation = explainer(X_scaled)
+                shap_values = explanation.values if hasattr(explanation, "values") else explanation
 
         # Ensure shap_values is a 2D numpy array matching X shape
         if isinstance(shap_values, list):

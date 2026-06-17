@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import DataCollection from './pages/DataCollection';
 import FeatureEngineering from './pages/FeatureEngineering';
+import MarketRegimes from './pages/MarketRegimes';
 import MLModels from './pages/MLModels';
 import SignalGeneration from './pages/SignalGeneration';
 import Backtesting from './pages/Backtesting';
@@ -45,6 +46,7 @@ export default function App() {
   const navItems = [
     { id: 'data', label: 'Data Collection', abbr: 'DC' },
     { id: 'features', label: 'Feature Engineering', abbr: 'FE' },
+    { id: 'regime', label: 'Market Regimes', abbr: 'MR' },
     { id: 'models', label: 'ML Models', abbr: 'ML' },
     { id: 'signals', label: 'Signal Generation', abbr: 'SG' },
     { id: 'backtest', label: 'Backtesting', abbr: 'BT' },
@@ -89,6 +91,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/data" replace />} />
           <Route path="/data" element={<DataCollection onStockDownloaded={triggerRefresh} />} />
           <Route path="/features" element={<FeatureEngineering refreshTrigger={refreshTrigger} />} />
+          <Route path="/regime" element={<MarketRegimes refreshTrigger={refreshTrigger} />} />
           <Route path="/models" element={<MLModels refreshTrigger={refreshTrigger} />} />
           <Route path="/signals" element={<SignalGeneration refreshTrigger={refreshTrigger} />} />
           <Route path="/backtest" element={<Backtesting refreshTrigger={refreshTrigger} />} />

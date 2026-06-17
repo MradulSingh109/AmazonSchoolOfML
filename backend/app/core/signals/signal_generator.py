@@ -38,6 +38,7 @@ def generate_signals(
     with open(model_path, 'rb') as f:
         model_data = pickle.load(f)
 
+    regime_aware = model_data.get('regime_aware', False)
     model = model_data['model']
     scaler = model_data.get('scaler', None)
     feature_cols = model_data['feature_cols']
@@ -45,22 +46,48 @@ def generate_signals(
     # Copy input data
     signal_df = df.copy()
 
-    # Extract features
-    X = signal_df[feature_cols].values
-
-    # Scale features if scaler exists
-    if scaler is not None:
-        X_scaled = scaler.transform(X)
-    else:
-        X_scaled = X
-
     # Predict probabilities (of class 1 / UP)
-    # Some classifiers might output probabilities. If they don't, we fall back.
-    if hasattr(model, "predict_proba"):
-        probs = model.predict_proba(X_scaled)[:, 1]
+    if regime_aware:
+        if 'Regime_Cluster' not in signal_df.columns:
+            raise ValueError("Regime_Cluster column is missing from the dataset. Please run Regime Detection first.")
+
+        probs = []
+        models_dict = model  # Dictionary of models
+        scalers_dict = scaler or {}  # Dictionary of scalers
+
+        for idx, row in signal_df.iterrows():
+            r = int(row['Regime_Cluster'])
+            if r == -1 or r not in models_dict:
+                # Default fallback probability
+                probs.append(0.5)
+                continue
+
+            model_r = models_dict[r]
+            scaler_r = scalers_dict.get(r, None)
+
+            # Extract row features
+            row_X = row[feature_cols].values.reshape(1, -1)
+            if scaler_r is not None:
+                row_X = scaler_r.transform(row_X)
+
+            prob_r = float(model_r.predict_proba(row_X)[0, 1])
+            probs.append(prob_r)
+
+        probs = np.array(probs)
     else:
-        # LogisticRegression, RandomForest, XGBoost all support predict_proba
-        probs = model.predict(X_scaled)
+        # Extract features
+        X = signal_df[feature_cols].values
+
+        # Scale features if scaler exists
+        if scaler is not None:
+            X_scaled = scaler.transform(X)
+        else:
+            X_scaled = X
+
+        if hasattr(model, "predict_proba"):
+            probs = model.predict_proba(X_scaled)[:, 1]
+        else:
+            probs = model.predict(X_scaled)
 
     signal_df['Probability'] = np.round(probs, 4)
 
