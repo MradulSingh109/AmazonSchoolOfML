@@ -16,6 +16,25 @@ app = FastAPI(
 # Setup uniform error/exception handling
 setup_exception_handlers(app)
 
+# Create database tables on startup
+from app.db.session import sync_engine
+from app.db.models import Base
+
+@app.on_event("startup")
+def on_startup():
+    logger.info("Initializing database tables...")
+    Base.metadata.create_all(bind=sync_engine)
+    logger.info("Database tables initialized successfully.")
+    
+    # Synchronize existing local CSVs and PKL models into DB
+    from app.db.session import SyncSessionLocal
+    from app.db.sync import sync_local_files_to_db
+    try:
+        with SyncSessionLocal() as session:
+            sync_local_files_to_db(session)
+    except Exception as e:
+        logger.error(f"Failed to synchronize filesystem with database: {e}")
+
 # Request/Response Logging & Timing Middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):

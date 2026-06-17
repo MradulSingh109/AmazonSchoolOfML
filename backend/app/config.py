@@ -19,6 +19,10 @@ LOG_DIR = os.getenv("LOG_DIR", os.path.join(BASE_DIR, 'logs'))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - [%(levelname)s] - %(message)s")
 
+# Database settings
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{os.path.join(BASE_DIR, 'quantml_v2.db')}")
+SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'quantml_v2.db')}")
+
 # Ensure critical application directories exist
 os.makedirs(RAW_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DIR, exist_ok=True)

@@ -1,7 +1,11 @@
 import os
 import asyncio
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.db.session import get_db
+from app.db.models import DBTrainedModel
 import pandas as pd
-from fastapi import APIRouter, HTTPException
 from app.core.signals.signal_generator import generate_signals
 from app.schemas.api_models import GenerateSignalsRequest
 from app.config import PROCESSED_DIR, MODELS_DIR
@@ -36,8 +40,9 @@ def _generate_signals_sync(symbol: str, model_filename: str, threshold: float, s
         short_style=short_style
     )
 
-    # Save signals to CSV
-    signals_filename = f"{symbol}_signals.csv"
+    # Save signals to CSV (differentiated by model name)
+    model_suffix = model_filename.replace(f"{symbol}_", "").replace(".pkl", "")
+    signals_filename = f"{symbol}_{model_suffix}_signals.csv"
     signals_filepath = os.path.join(PROCESSED_DIR, signals_filename)
     sig_df.to_csv(signals_filepath, index=False)
 
@@ -75,7 +80,7 @@ def _generate_signals_sync(symbol: str, model_filename: str, threshold: float, s
     }
 
 @router.post("/generate")
-async def api_generate_signals(payload: GenerateSignalsRequest):
+async def api_generate_signals(payload: GenerateSignalsRequest, db: AsyncSession = Depends(get_db)):
     symbol = payload.symbol.lower()
     model_filename = payload.model_filename
     threshold = payload.threshold
@@ -86,6 +91,15 @@ async def api_generate_signals(payload: GenerateSignalsRequest):
     try:
         result = await asyncio.to_thread(_generate_signals_sync, symbol, model_filename, threshold, short_style)
         logger.info(f"Successfully generated signals for {symbol}")
+        
+        # Link generated signals file path to the trained model in the database
+        stmt = select(DBTrainedModel).where(DBTrainedModel.file_path == model_filename)
+        db_res = await db.execute(stmt)
+        db_model = db_res.scalars().first()
+        if db_model:
+            db_model.latest_signals_path = result['filename']
+            await db.commit()
+            
         return result
     except FileNotFoundError as e:
         logger.warning(str(e))
@@ -102,7 +116,14 @@ def _list_signals_sync() -> list:
     if os.path.exists(PROCESSED_DIR):
         for f in os.listdir(PROCESSED_DIR):
             if f.endswith('_signals.csv'):
-                symbol = f.replace('_signals.csv', '').upper()
+                parts = f.replace('_signals.csv', '').split('_')
+                symbol = parts[0].upper()
+                if len(parts) > 1:
+                    model_desc = " ".join(parts[1:]).replace('_', ' ').upper()
+                    display_symbol = f"{symbol} ({model_desc})"
+                else:
+                    display_symbol = symbol
+                    
                 filepath = os.path.join(PROCESSED_DIR, f)
                 df = pd.read_csv(filepath)
                 
@@ -112,7 +133,7 @@ def _list_signals_sync() -> list:
 
                 files.append({
                     'filename': f,
-                    'symbol': symbol,
+                    'symbol': display_symbol,
                     'rows': total_rows,
                     'buy_percentage': buy_percentage
                 })

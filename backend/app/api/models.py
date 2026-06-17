@@ -2,7 +2,11 @@ import os
 import pickle
 import asyncio
 import pandas as pd
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.db.session import get_db
+from app.db.models import DBTrainedModel
 from app.core.models.logistic_regression import train_logistic_regression
 from app.core.models.random_forest import train_random_forest
 from app.core.models.xgboost_model import train_xgboost
@@ -236,7 +240,7 @@ def _train_model_sync(symbol: str, model_type: str, regime_aware: bool, params: 
     }
 
 @router.post("/train")
-async def api_train_model(payload: TrainModelRequest):
+async def api_train_model(payload: TrainModelRequest, db: AsyncSession = Depends(get_db)):
     symbol = payload.symbol.lower()
     model_type = payload.model_type.lower()
     regime_aware = payload.regime_aware
@@ -248,6 +252,33 @@ async def api_train_model(payload: TrainModelRequest):
         # Offload model training to a separate thread
         result = await asyncio.to_thread(_train_model_sync, symbol, model_type, regime_aware, params)
         logger.info(f"Successfully trained {'regime-aware ' if regime_aware else ''}{model_type} for {symbol}")
+        
+        # Save or update the trained model record in the DB
+        symbol_upper = symbol.upper()
+        stmt = select(DBTrainedModel).where(
+            DBTrainedModel.symbol == symbol_upper,
+            DBTrainedModel.model_type == model_type,
+            DBTrainedModel.regime_aware == regime_aware
+        )
+        db_res = await db.execute(stmt)
+        db_model = db_res.scalars().first()
+        
+        model_suffix = f"{model_type}_regime_aware" if regime_aware else model_type
+        model_filename = f"{symbol}_{model_suffix}.pkl"
+        
+        if not db_model:
+            db_model = DBTrainedModel(
+                symbol=symbol_upper,
+                model_type=model_type,
+                regime_aware=regime_aware,
+                file_path=model_filename
+            )
+            db.add(db_model)
+            
+        db_model.metrics_json = result['metrics']
+        db_model.hyperparameters_json = params
+        await db.commit()
+        
         return result
     except FileNotFoundError as e:
         logger.warning(str(e))
@@ -259,33 +290,24 @@ async def api_train_model(payload: TrainModelRequest):
         logger.exception(f"Error training {model_type} model for {symbol}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error training model: {str(e)}")
 
-def _list_models_sync() -> list:
-    models = []
-    if os.path.exists(MODELS_DIR):
-        for f in os.listdir(MODELS_DIR):
-            if f.endswith('.pkl') and not f.endswith('_regime.pkl'):  # Filter out standalone regime clustering models
-                filepath = os.path.join(MODELS_DIR, f)
-                try:
-                    with open(filepath, 'rb') as file:
-                        m_data = pickle.load(file)
-                        
-                        # Extract symbol from filename (e.g. rely_xgboost.pkl -> rely)
-                        parts = f.replace('.pkl', '').split('_')
-                        symbol = parts[0].upper()
-                        model_type = '_'.join(parts[1:])
-
-                        models.append({
-                            'filename': f,
-                            'symbol': symbol,
-                            'model_type': model_type,
-                            'metrics': m_data.get('metrics', {})
-                        })
-                except Exception as e:
-                    logger.error(f"Error reading model file {f}: {e}")
-    return models
-
 @router.get("/list")
-async def api_list_models():
-    logger.debug("Listing all ML models")
-    models = await asyncio.to_thread(_list_models_sync)
+async def api_list_models(db: AsyncSession = Depends(get_db)):
+    logger.debug("Listing all ML models from DB")
+    stmt = select(DBTrainedModel)
+    db_res = await db.execute(stmt)
+    models_db = db_res.scalars().all()
+    
+    models = []
+    for m in models_db:
+        # Verify model file actually exists on disk so we don't display orphaned DB records
+        full_path = os.path.join(MODELS_DIR, m.file_path)
+        if os.path.exists(full_path):
+            suffix = f"{m.model_type}_regime_aware" if m.regime_aware else m.model_type
+            models.append({
+                'filename': m.file_path,
+                'symbol': m.symbol,
+                'model_type': suffix,
+                'metrics': m.metrics_json or {}
+            })
+            
     return {'success': True, 'models': models}
