@@ -6473,3 +6473,65 @@ sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
 2026-06-17 23:55:49,829 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
 2026-06-17 23:55:49,832 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 3.05ms
 2026-06-17 23:55:52,815 - quantml.app.main - [INFO] - Initializing database tables...
+2026-06-17 23:55:54,822 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:55:54,825 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 2.11ms
+2026-06-17 23:55:59,830 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:55:59,835 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.90ms
+2026-06-17 23:56:04,826 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:04,831 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.28ms
+2026-06-17 23:56:09,821 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:09,826 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.04ms
+2026-06-17 23:56:14,834 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:14,838 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 3.97ms
+2026-06-17 23:56:19,829 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:19,833 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 3.92ms
+2026-06-17 23:56:24,828 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:24,831 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 3.30ms
+2026-06-17 23:56:29,824 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:29,826 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 2.30ms
+2026-06-17 23:56:31,998 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:32,003 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.75ms
+2026-06-17 23:56:34,058 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:34,063 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.87ms
+2026-06-17 23:56:34,398 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:34,404 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.21ms
+2026-06-17 23:56:34,410 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:34,415 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.90ms
+2026-06-17 23:56:34,422 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:34,427 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.76ms
+2026-06-17 23:56:34,431 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:34,437 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.35ms
+2026-06-17 23:56:36,430 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:36,435 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.84ms
+2026-06-17 23:56:36,440 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:36,445 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.70ms
+2026-06-17 23:56:38,242 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:38,248 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.26ms
+2026-06-17 23:56:38,255 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:38,262 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 7.28ms
+2026-06-17 23:56:38,267 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:38,273 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.49ms
+2026-06-17 23:56:38,279 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:38,285 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.96ms
+2026-06-17 23:56:40,599 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:40,604 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 5.24ms
+2026-06-17 23:56:40,610 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:40,615 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.85ms
+2026-06-17 23:56:42,834 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:42,838 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.17ms
+2026-06-17 23:56:43,250 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:43,254 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.39ms
+2026-06-17 23:56:48,257 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:48,264 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 7.34ms
+2026-06-17 23:56:53,824 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:53,828 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 3.72ms
+2026-06-17 23:56:58,832 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:56:58,835 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 3.63ms
+2026-06-17 23:57:03,825 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:57:03,831 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 6.20ms
+2026-06-17 23:57:08,837 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:57:08,842 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 4.08ms
+2026-06-17 23:57:13,820 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:57:13,822 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 2.31ms
+2026-06-17 23:57:18,830 - quantml.app.main - [INFO] - Ingress: GET /api/stocks from 127.0.0.1
+2026-06-17 23:57:18,833 - quantml.app.main - [INFO] - Egress: GET /api/stocks - Status: 200 - Latency: 2.40ms
