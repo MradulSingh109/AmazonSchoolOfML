@@ -12,6 +12,8 @@ WORKERS = int(os.getenv("WORKERS", "1"))
 # Data storage directories
 RAW_DIR = os.getenv("RAW_DIR", os.path.join(BASE_DIR, 'data', 'raw'))
 PROCESSED_DIR = os.getenv("PROCESSED_DIR", os.path.join(BASE_DIR, 'data', 'processed'))
+RAW_INTRADAY_DIR = os.getenv("RAW_INTRADAY_DIR", os.path.join(BASE_DIR, 'data', 'raw_intraday'))
+PROCESSED_INTRADAY_DIR = os.getenv("PROCESSED_INTRADAY_DIR", os.path.join(BASE_DIR, 'data', 'processed_intraday'))
 MODELS_DIR = os.getenv("MODELS_DIR", os.path.join(BASE_DIR, 'models'))
 
 # Logging settings
@@ -26,5 +28,7 @@ SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", f"sqlite:///{os.path.join(BAS
 # Ensure critical application directories exist
 os.makedirs(RAW_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DIR, exist_ok=True)
+os.makedirs(RAW_INTRADAY_DIR, exist_ok=True)
+os.makedirs(PROCESSED_INTRADAY_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)

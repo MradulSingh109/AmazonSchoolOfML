@@ -1,0 +1,144 @@
+Technical Requirements Document (TRD)\
+Project Name
+QuantML Research Platform
+1. System Overview
+The system will function as a research pipeline that converts raw market data into machine-learning-driven trading signals and evaluates those signals through historical simulation.
+Workflow:
+Market Data↓Feature Engineering↓Dataset Creation↓Model Training↓Prediction↓Signal Generation↓Backtesting↓Performance Evaluation
+2. Architecture
+Logical Architecture
+┌─────────────────────┐│ Data Loader │└──────────┬──────────┘↓┌─────────────────────┐│ Feature Engineering │└──────────┬──────────┘↓┌─────────────────────┐│ ML Models │└──────────┬──────────┘↓┌─────────────────────┐│ Signal Engine │└──────────┬──────────┘↓┌─────────────────────┐│ Backtesting Engine │└──────────┬──────────┘↓┌─────────────────────┐│ Evaluation Module │└─────────────────────┘
+3. Folder Structure
+quant-research/
+data/├── raw/├── processed/
+src/
+├── data/│ └── data_loader.py
+├── features/│ ├── feature_engineering.py│ └── target_generation.py
+├── models/│ ├── logistic_regression.py│ ├── random_forest.py│ └── xgboost_model.py
+├── signals/│ └── signal_generator.py
+├── backtest/│ └── backtester.py
+├── evaluation/│ ├── ml_metrics.py│ └── trading_metrics.py
+reports/
+notebooks/
+main.py
+4. Data Layer
+Source:
+Yahoo Finance
+Library:
+yfinance
+Fields:
+Date
+Open
+High
+Low
+Close
+Volume
+Storage:
+CSV files
+Example:
+data/raw/reliance.csv
+5. Feature Engineering Layer
+Features:
+Trend:
+EMA20
+EMA50
+EMA200
+Momentum:
+RSI
+MACD
+Volatility:
+ATR
+Bollinger Width
+Returns:
+1D Return
+5D Return
+10D Return
+Volume:
+Volume Ratio
+Output:
+Processed dataset
+6. Target Generation
+Binary Classification
+Target:
+1 → Tomorrow Close > Today Close
+0 → Tomorrow Close ≤ Today Close
+7. Machine Learning Layer
+Models:
+Logistic Regression
+Purpose:
+Baseline model
+Random Forest
+Purpose:
+Non-linear pattern detection
+XGBoost
+Purpose:
+Primary production model
+Validation:
+TimeSeriesSplit
+Walk-Forward Validation
+8. Signal Generation Layer
+Rule:
+Probability > 0.55
+BUY
+Probability ≤ 0.55
+SELL
+Output:
+Signal column
+9. Backtesting Engine
+Responsibilities:
+Execute simulated trades
+Calculate portfolio value
+Track returns
+Store trade history
+Inputs:
+Predictions
+Outputs:
+Performance report
+10. Evaluation Layer
+ML Metrics:
+Accuracy
+Precision
+Recall
+F1 Score
+ROC-AUC
+Trading Metrics:
+CAGR
+Sharpe Ratio
+Win Rate
+Profit Factor
+Maximum Drawdown
+11. Explainability Layer
+Tool:
+SHAP
+Outputs:
+Global feature importance
+Local prediction explanations
+Purpose:
+Understand model behavior and identify predictive market features.
+12. Development Roadmap
+Phase 1
+Data Collection
+Phase 2
+Feature Engineering
+Phase 3
+Target Creation
+Phase 4
+Baseline Models
+Phase 5
+XGBoost Training
+Phase 6
+Signal Generation
+Phase 7
+Backtesting
+Phase 8
+SHAP Explainability
+Phase 9
+Research Report Generation
+13. Deliverables
+Final Outputs:
+Trained ML models
+Backtesting engine
+Performance report
+SHAP analysis
+Research documentation
+Resume-ready project

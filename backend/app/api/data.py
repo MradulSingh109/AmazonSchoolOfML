@@ -3,9 +3,9 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.core.data.data_loader import download_stock_data
-from app.schemas.api_models import DownloadRequest
-from app.config import RAW_DIR
+from app.core.data.data_loader import download_stock_data, download_intraday_data, list_downloaded_intraday_stocks
+from app.schemas.api_models import DownloadRequest, DownloadIntradayRequest
+from app.config import RAW_DIR, RAW_INTRADAY_DIR
 from app.core.logging import get_logger
 from app.db.session import get_db
 from app.db.models import DBStock
@@ -81,5 +81,34 @@ async def api_stocks(db: AsyncSession = Depends(get_db)):
             'modified': s.updated_at.strftime('%Y-%m-%d %H:%M')
         })
         
+    return {"success": True, "stocks": stocks}
+
+
+@router.post("/download-intraday")
+async def api_download_intraday(payload: DownloadIntradayRequest):
+    logger.info(f"Received request to download intraday stock/index: {payload.symbol}")
+    
+    # Run blocking network IO and file operations in a separate thread
+    result = await asyncio.to_thread(
+        download_intraday_data,
+        symbol=payload.symbol,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        interval=payload.interval
+    )
+    
+    if not result.get("success", False):
+        error_msg = result.get("message", "Failed to download intraday data")
+        logger.error(f"Failed download for {payload.symbol}: {error_msg}")
+        raise HTTPException(status_code=400, detail=error_msg)
+        
+    logger.info(f"Successfully downloaded intraday data for {payload.symbol}")
+    return result
+
+
+@router.get("/intraday-stocks")
+async def api_intraday_stocks():
+    logger.debug("Listing all downloaded intraday datasets")
+    stocks = list_downloaded_intraday_stocks()
     return {"success": True, "stocks": stocks}
 

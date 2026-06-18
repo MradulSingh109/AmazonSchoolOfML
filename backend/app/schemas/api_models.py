@@ -35,3 +35,11 @@ class DetectRegimeRequest(BaseModel):
     symbol: str = Field(..., description="Stock symbol to detect regimes for")
     n_regimes: int = Field(default=3, ge=2, le=5, description="Number of clusters/states to segment")
     method: str = Field(default="gmm", description="Clustering algorithm: 'gmm' or 'kmeans'")
+
+
+class DownloadIntradayRequest(BaseModel):
+    symbol: str = Field(..., description="Stock symbol to download, e.g. ^NSEI, RELIANCE")
+    start_date: str = Field(..., description="Start date in YYYY-MM-DD format")
+    end_date: str = Field(..., description="End date in YYYY-MM-DD format")
+    interval: str = Field(default="5m", description="Intraday bar interval (e.g. 5m, 15m)")
+
