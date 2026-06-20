@@ -1,45 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import AnalyticsChart from '../components/AnalyticsChart';
-import TablePreview from '../components/TablePreview';
+import { useNavigate } from 'react-router-dom';
+import AnalyticsChart from '../../components/AnalyticsChart';
+import TablePreview from '../../components/TablePreview';
 
-export default function StrategyDetail() {
-  const { strategyId } = useParams();
+export default function ITSMStrategy() {
   const navigate = useNavigate();
 
-  // If not ITSM, show standard placeholder
-  if (strategyId !== 'itsm') {
-    return (
-      <div className="animate-fade-in">
-        <button 
-          className="btn" 
-          style={{ marginBottom: '24px', background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}
-          onClick={() => navigate('/strategies')}
-        >
-          <span>← Back to Strategies</span>
-        </button>
-
-        <header className="page-header">
-          <h1 style={{ textTransform: 'capitalize' }}>
-            {strategyId ? strategyId.replace('-', ' ') : 'Strategy'} Backtester
-          </h1>
-          <p>Configure settings and run simulated backtests for the {strategyId} strategy.</p>
-        </header>
-
-        <section className="card" style={{ marginTop: '24px' }}>
-          <h2>Strategy Configuration</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            Detailed configuration controls and interactive charts for <strong>{strategyId}</strong> are under development.
-          </p>
-        </section>
-      </div>
-    );
-  }
-
-  // --- ITSM Specific Dashboard State ---
+  // --- ITSM Dashboard State ---
   const [activeStep, setActiveStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: null, message: '' });
+  const [showAboutStrategy, setShowAboutStrategy] = useState(false);
 
   // Download State
   const [downloadSymbol, setDownloadSymbol] = useState('^NSEI');
@@ -125,7 +96,6 @@ export default function StrategyDetail() {
         setStatus({ type: 'success', message: data.message });
         await fetchFiles();
         setSelectedRawFile(data.filename);
-        // Automatically move to step 2
         setActiveStep(2);
       } else {
         setStatus({ type: 'error', message: data.detail || 'Download failed.' });
@@ -217,10 +187,12 @@ export default function StrategyDetail() {
   const handleRunBacktest = async () => {
     const rawFile = selectedRawFile;
     const featFile = selectedFeaturesFile || (rawFile ? rawFile.replace('.csv', '_features.csv') : '');
+    
     if (!rawFile || !featFile || !selectedModelFile) {
       setStatus({ type: 'error', message: 'Missing raw data, features data, or trained model file.' });
       return;
     }
+
     setLoading(true);
     setStatus({ type: 'info', message: 'Running Walk-Forward Intraday Simulation...' });
     try {
@@ -255,7 +227,6 @@ export default function StrategyDetail() {
     }
   };
 
-  // Quick picker symbols for intraday
   const indexTickers = [
     { label: 'Nifty 50 (^NSEI)', val: '^NSEI' },
     { label: 'Nifty Bank (^NSEBANK)', val: '^NSEBANK' },
@@ -268,8 +239,25 @@ export default function StrategyDetail() {
       {/* Navigation & Header */}
       <button 
         className="btn" 
-        style={{ marginBottom: '24px', background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}
+        style={{ 
+          marginBottom: '24px', 
+          background: '#000000', 
+          color: '#ffffff',
+          border: '1px solid #27272a',
+          borderRadius: '9999px',
+          transition: 'all 0.3s ease'
+        }}
         onClick={() => navigate('/strategies')}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#ffffff';
+          e.currentTarget.style.color = '#000000';
+          e.currentTarget.style.borderColor = '#ffffff';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#000000';
+          e.currentTarget.style.color = '#ffffff';
+          e.currentTarget.style.borderColor = '#27272a';
+        }}
       >
         <span>← Back to Strategies</span>
       </button>
@@ -278,11 +266,97 @@ export default function StrategyDetail() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1>Intraday Time Series Momentum (ITSM)</h1>
           <span className="badge" style={{ background: 'rgba(34, 197, 94, 0.1)', color: 'var(--accent-green)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-            Active Strategy
+            ML Strategy
           </span>
         </div>
-        <p>Exploit overnight information and midday order execution lag using machine learning regressors.</p>
+        <p>
+          Exploit overnight information and midday order execution lag using machine learning regressors.
+        </p>
       </header>
+
+      {/* About Strategy Dropdown */}
+      <div className="card animate-fade-in" style={{ marginBottom: '32px', padding: '0', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.01)' }}>
+        <button
+          onClick={() => setShowAboutStrategy(!showAboutStrategy)}
+          style={{
+            width: '100%',
+            padding: '16px 24px',
+            background: 'transparent',
+            border: 'none',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            textAlign: 'left',
+            color: 'var(--text-primary)',
+            fontWeight: 700,
+            fontSize: '15.5px',
+            outline: 'none',
+            transition: 'background 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.02)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            About Strategy: Intraday Time Series Momentum (ITSM)
+          </span>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            {showAboutStrategy ? '▲ Hide Details' : '▼ View Details'}
+          </span>
+        </button>
+
+        {showAboutStrategy && (
+          <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.015)', lineHeight: '1.6' }}>
+            <div className="animate-fade-in" style={{ fontSize: '13.5px' }}>
+              <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
+                The <strong>ITSM</strong> strategy exploits overnight information dissemination and intraday order execution latency of institutional investors. It predicts the return of the final hour of trading (14:40 to 15:10 IST) using morning momentum indicators and a machine learning regressor.
+              </p>
+              <div className="grid-2" style={{ gap: '24px', alignItems: 'start' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 700, color: 'var(--accent-purple)' }}>Mathematical Feature Vectors</h4>
+                  <ul style={{ paddingLeft: '20px', margin: '0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <li>
+                      <strong>Overnight + Opening Return (ONFH):</strong>
+                      <br /><span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', background: 'rgba(0,0,0,0.03)', padding: '2px 4px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>ONFH = ln(Price_09:45 / Price_PrevClose_15:30)</span>
+                    </li>
+                    <li>
+                      <strong>Middle Session Return (M):</strong>
+                      <br /><span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', background: 'rgba(0,0,0,0.03)', padding: '2px 4px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>M = ln(Price_14:40 / Price_09:45)</span>
+                    </li>
+                    <li>
+                      <strong>Gap Return (Gap):</strong>
+                      <br /><span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', background: 'rgba(0,0,0,0.03)', padding: '2px 4px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>Gap = (Open_09:15 - Price_PrevClose_15:30) / Price_PrevClose_15:30</span>
+                    </li>
+                    <li>
+                      <strong>Relative Volume (RelVol):</strong>
+                      <br /><span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', background: 'rgba(0,0,0,0.03)', padding: '2px 4px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>RelVol = Volume_14:40 / Average_DailyVolume_20d</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 700, color: 'var(--accent-green)' }}>Execution & Risk Management</h4>
+                  <ul style={{ paddingLeft: '20px', margin: '0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <li>
+                      <strong>Target Variable (LH):</strong> Predicted return magnitude of the final hour.
+                      <br /><span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', background: 'rgba(0,0,0,0.03)', padding: '2px 4px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>LH = ln(Price_15:10 / Price_14:40)</span>
+                    </li>
+                    <li>
+                      <strong>Stop Loss (SL):</strong> Volatility-based stop distance:
+                      <br /><span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', background: 'rgba(0,0,0,0.03)', padding: '2px 4px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>Stop Distance = 0.75 &times; ATR14</span>
+                    </li>
+                    <li>
+                      <strong>Mandatory Exits:</strong>
+                      <br />• All active positions are squared off at exactly <strong>15:10 IST</strong>.
+                      <br />• Positions use a 0.5% account equity risk ceiling per trade.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Status Bar */}
       {status.message && (
@@ -296,12 +370,12 @@ export default function StrategyDetail() {
               status.type === 'success' ? 'var(--accent-green)' : 
               status.type === 'error' ? 'var(--accent-red)' : 'var(--accent-cyan)'
             }`,
-            background: 'rgba(255,255,255,0.95)'
+            background: 'rgba(255, 255, 255, 0.95)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyItems: 'center', gap: '10px' }}>
             {loading && <div className="spinner-mini" />}
-            <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500 }}>
+            <span style={{ fontSize: '14px', color: '#000000ff', fontWeight: 500 }}>
               {status.message}
             </span>
           </div>
@@ -325,8 +399,8 @@ export default function StrategyDetail() {
               padding: '12px 8px',
               borderRadius: '6px',
               border: 'none',
-              background: activeStep === s.num ? 'var(--text-primary)' : 'transparent',
-              color: activeStep === s.num ? '#ffffff' : 'var(--text-secondary)',
+              background: activeStep === s.num ? '#ffffff' : 'transparent',
+              color: activeStep === s.num ? '#000000' : 'var(--text-secondary)',
               fontWeight: 600,
               fontSize: '13px',
               cursor: 'pointer',
@@ -404,7 +478,28 @@ export default function StrategyDetail() {
               </div>
 
               <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-                <button type="submit" className="btn" style={{ background: 'var(--text-primary)', color: '#fff' }} disabled={loading}>
+                <button 
+                  type="submit" 
+                  className="btn" 
+                  style={{ 
+                    background: '#000000', 
+                    color: '#ffffff',
+                    border: '1px solid #27272a',
+                    borderRadius: '9999px',
+                    transition: 'all 0.3s ease'
+                  }} 
+                  disabled={loading}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.color = '#000000';
+                    e.currentTarget.style.borderColor = '#ffffff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#000000';
+                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.borderColor = '#27272a';
+                  }}
+                >
                   <span>{loading ? 'Downloading...' : 'Fetch Intraday Data'}</span>
                 </button>
               </div>
@@ -419,12 +514,12 @@ export default function StrategyDetail() {
               <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '8px 4px' }}>Symbol</th>
-                      <th style={{ padding: '8px 4px' }}>Interval</th>
-                      <th style={{ padding: '8px 4px' }}>Rows</th>
-                      <th style={{ padding: '8px 4px' }}>Size</th>
-                      <th style={{ padding: '8px 4px' }}>Action</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', background:'#ffffffff' }}>
+                      <th style={{ padding: '8px 4px', color:'#000000ff' }}>Symbol</th>
+                      <th style={{ padding: '8px 4px', color:'#000000ff' }}>Interval</th>
+                      <th style={{ padding: '8px 4px', color:'#000000ff' }}>Rows</th>
+                      <th style={{ padding: '8px 4px', color:'#000000ff' }}>Size</th>
+                      <th style={{ padding: '8px 4px', color:'#000000ff' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -460,7 +555,7 @@ export default function StrategyDetail() {
           <div className="card animate-fade-in" style={{ padding: '24px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Step 2: Strategy Feature Engineering</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-              Calculate the target last-hour return ($LH_t$) and all structural metrics like overnight gap return (`onfh`), midday trend return (`middle_return`), relative volume (`relative_volume`), VWAP trend vectors, and dynamic ATR boundaries.
+              Calculate the target last-hour return ($LH_t$) and all structural metrics like overnight gap return (<code>onfh</code>), midday trend return (<code>middle_return</code>), relative volume (<code>relative_volume</code>), VWAP trend vectors, and dynamic ATR boundaries.
             </p>
 
             <div style={{ background: 'rgba(0,0,0,0.02)', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
@@ -483,8 +578,25 @@ export default function StrategyDetail() {
               <button 
                 onClick={handleProcessFeatures} 
                 className="btn" 
-                style={{ background: 'var(--text-primary)', color: '#fff' }} 
+                style={{ 
+                  background: '#000000', 
+                  color: '#ffffff',
+                  border: '1px solid #27272a',
+                  borderRadius: '9999px',
+                  transition: 'all 0.3s ease'
+                }} 
                 disabled={loading || !selectedRawFile}
+                onMouseEnter={(e) => {
+                  if (loading || !selectedRawFile) return;
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.color = '#000000';
+                  e.currentTarget.style.borderColor = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#000000';
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.borderColor = '#27272a';
+                }}
               >
                 <span>{loading ? 'Processing...' : 'Compute Daily Features'}</span>
               </button>
@@ -503,7 +615,23 @@ export default function StrategyDetail() {
                   <button
                     onClick={() => setActiveStep(3)}
                     className="btn"
-                    style={{ background: 'var(--accent-purple)', color: '#fff' }}
+                    style={{ 
+                      background: '#000000', 
+                      color: '#ffffff',
+                      border: '1px solid #27272a',
+                      borderRadius: '9999px',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.color = '#000000';
+                      e.currentTarget.style.borderColor = '#ffffff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#000000';
+                      e.currentTarget.style.color = '#ffffff';
+                      e.currentTarget.style.borderColor = '#27272a';
+                    }}
                   >
                     <span>Proceed to Model Training →</span>
                   </button>
@@ -610,8 +738,25 @@ export default function StrategyDetail() {
               <button
                 onClick={handleTrainModel}
                 className="btn"
-                style={{ background: 'var(--text-primary)', color: '#fff' }}
+                style={{ 
+                  background: '#000000', 
+                  color: '#ffffff',
+                  border: '1px solid #27272a',
+                  borderRadius: '9999px',
+                  transition: 'all 0.3s ease'
+                }}
                 disabled={loading || (!selectedRawFile && !selectedFeaturesFile)}
+                onMouseEnter={(e) => {
+                  if (loading || (!selectedRawFile && !selectedFeaturesFile)) return;
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.color = '#000000';
+                  e.currentTarget.style.borderColor = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#000000';
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.borderColor = '#27272a';
+                }}
               >
                 <span>{loading ? 'Training...' : 'Fit & Evaluate Model'}</span>
               </button>
@@ -667,7 +812,23 @@ export default function StrategyDetail() {
                   <button
                     onClick={() => setActiveStep(4)}
                     className="btn"
-                    style={{ background: 'var(--accent-purple)', color: '#fff' }}
+                    style={{ 
+                      background: '#000000', 
+                      color: '#ffffff',
+                      border: '1px solid #27272a',
+                      borderRadius: '9999px',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.color = '#000000';
+                      e.currentTarget.style.borderColor = '#ffffff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#000000';
+                      e.currentTarget.style.color = '#ffffff';
+                      e.currentTarget.style.borderColor = '#27272a';
+                    }}
                   >
                     <span>Proceed to Backtesting →</span>
                   </button>
@@ -684,11 +845,11 @@ export default function StrategyDetail() {
               <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '8px 4px' }}>Model File</th>
-                      <th style={{ padding: '8px 4px' }}>Underlying</th>
-                      <th style={{ padding: '8px 4px' }}>Algorithm</th>
-                      <th style={{ padding: '8px 4px' }}>Action</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', background:'#ffffffff' }}>
+                      <th style={{ padding: '8px 4px', color: '#000000ff' }}>Model File</th>
+                      <th style={{ padding: '8px 4px', color: '#000000ff' }}>Underlying</th>
+                      <th style={{ padding: '8px 4px', color: '#000000ff' }}>Algorithm</th>
+                      <th style={{ padding: '8px 4px', color: '#000000ff' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -721,7 +882,10 @@ export default function StrategyDetail() {
         {/* STEP 4: Backtest Configuration */}
         {activeStep === 4 && (
           <div className="card animate-fade-in" style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Step 4: Configure Backtesting Simulation</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>
+              Step 4: Configure Backtesting Simulation
+            </h2>
+            
             <div className="grid-2" style={{ gap: '20px', marginBottom: '24px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '13px' }}>Model Selector</label>
@@ -788,8 +952,25 @@ export default function StrategyDetail() {
               <button
                 onClick={handleRunBacktest}
                 className="btn"
-                style={{ background: 'var(--text-primary)', color: '#fff' }}
+                style={{ 
+                  background: '#000000', 
+                  color: '#ffffff',
+                  border: '1px solid #27272a',
+                  borderRadius: '9999px',
+                  transition: 'all 0.3s ease'
+                }}
                 disabled={loading || !selectedModelFile}
+                onMouseEnter={(e) => {
+                  if (loading || !selectedModelFile) return;
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.color = '#000000';
+                  e.currentTarget.style.borderColor = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#000000';
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.borderColor = '#27272a';
+                }}
               >
                 <span>{loading ? 'Running...' : 'Run Simulation'}</span>
               </button>
@@ -805,7 +986,7 @@ export default function StrategyDetail() {
               <>
                 <div className="card" style={{ padding: '24px' }}>
                   <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>Simulation Results Metrics</h2>
-                  <div className="grid-3" style={{ gap: '16px' }}>
+                  <div className="grid-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                     <div style={{ background: 'rgba(0,0,0,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
                       <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)' }}>Total Return</span>
                       <h3 style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 0 0', color: backtestResults.metrics.total_return_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
@@ -828,6 +1009,13 @@ export default function StrategyDetail() {
                     </div>
 
                     <div style={{ background: 'rgba(0,0,0,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
+                      <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)' }}>CAGR</span>
+                      <h3 style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 0 0', color: backtestResults.metrics.cagr_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                        {backtestResults.metrics.cagr_pct}%
+                      </h3>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
                       <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)' }}>Total Trades</span>
                       <h3 style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 0 0' }}>
                         {backtestResults.metrics.trades_count}
@@ -840,19 +1028,14 @@ export default function StrategyDetail() {
                         {backtestResults.metrics.win_rate_pct}%
                       </h3>
                     </div>
-
-                    <div style={{ background: 'rgba(0,0,0,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
-                      <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)' }}>CAGR</span>
-                      <h3 style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 0 0', color: backtestResults.metrics.cagr_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                        {backtestResults.metrics.cagr_pct}%
-                      </h3>
-                    </div>
                   </div>
                 </div>
 
                 {/* Equity Curve Chart */}
                 <div className="card" style={{ padding: '24px' }}>
-                  <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>ITSM Equity & Drawdown Curves</h2>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px' }}>
+                    ITSM Equity & Drawdown Curves
+                  </h2>
                   <AnalyticsChart
                     type="line"
                     data={{
@@ -889,16 +1072,18 @@ export default function StrategyDetail() {
 
                 {/* Trades Log */}
                 <div className="card" style={{ padding: '24px' }}>
-                  <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>ITSM Executed Trade Log</h2>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>
+                    ITSM Executed Trade Log
+                  </h2>
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '10px 6px' }}>Exit Date</th>
-                          <th style={{ padding: '10px 6px' }}>Direction</th>
-                          <th style={{ padding: '10px 6px' }}>Qty</th>
-                          <th style={{ padding: '10px 6px' }}>Entry Price</th>
-                          <th style={{ padding: '10px 6px' }}>Exit Price</th>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', background:'#ffffffff' }}>
+                          <th style={{ padding: '10px 6px', color: '#000000ff' }}>Exit Date</th>
+                          <th style={{ padding: '10px 6px', color: '#000000ff' }}>Direction</th>
+                          <th style={{ padding: '10px 6px', color: '#000000ff' }}>Qty</th>
+                          <th style={{ padding: '10px 6px', color: '#000000ff' }}>Entry Price</th>
+                          <th style={{ padding: '10px 6px', color: '#000000ff' }}>Exit Price</th>
                           <th style={{ padding: '10px 6px' }}>SL Price</th>
                           <th style={{ padding: '10px 6px' }}>Stopped Out</th>
                           <th style={{ padding: '10px 6px' }}>PnL (INR)</th>
@@ -939,7 +1124,7 @@ export default function StrategyDetail() {
               </>
             ) : (
               <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
-                <p style={{ color: 'var(--text-secondary)' }}>No simulation data. Please select a model and run a backtest in Step 4.</p>
+                <p style={{ color: 'var(--text-secondary)' }}>No simulation data. Please run a backtest in Step 4.</p>
               </div>
             )}
           </div>

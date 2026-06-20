@@ -75,6 +75,9 @@ def calculate_itsm_features(df: pd.DataFrame) -> pd.DataFrame:
         # Target variable (Last Hour return)
         lh_return = np.log(p_1510 / p_1440)
         
+        # VWAP Distance: percentage deviation of entry price from session VWAP
+        vwap_dist = (p_1440 - vwap_val) / vwap_val if vwap_val > 0 else 0.0
+        
         daily_records.append({
             'Date': curr_date.strftime('%Y-%m-%d'),
             'p_close_prev': float(p_close_prev),
@@ -88,6 +91,7 @@ def calculate_itsm_features(df: pd.DataFrame) -> pd.DataFrame:
             'intraday_volatility': float(intraday_vol),
             'vol_1440': float(vol_1440),
             'vwap_1440': float(vwap_val),
+            'vwap_dist': float(vwap_dist),
             'lh_return': float(lh_return)
         })
         

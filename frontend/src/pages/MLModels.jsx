@@ -127,7 +127,7 @@ export default function MLModels({ refreshTrigger }) {
   const renderOverfitBadge = (train, cv) => {
     const diff = Math.abs(train - cv);
     if (diff > 0.15) {
-      return <span style={{ color: 'var(--accent-red)', fontWeight: 600 }}>⚠️ Overfitting</span>;
+      return <span style={{ color: 'var(--accent-red)', fontWeight: 600 }}>Overfitting</span>;
     } else if (diff > 0.08) {
       return <span style={{ color: 'var(--accent-amber)', fontWeight: 600 }}>Mild Overfit</span>;
     } else if (cv < 0.52) {
@@ -486,13 +486,13 @@ export default function MLModels({ refreshTrigger }) {
               </div>
 
               <div className="table-wrapper">
-                <table style={{ textAlign: 'center' }}>
-                  <thead>
+                <table style={{ textAlign: 'center',background:'#000000' }}>
+                  <thead style={{background:'#ffffff'}}>
                     <tr>
-                      <th style={{ textAlign: 'left' }}>Metric</th>
-                      <th>In-Sample (Train)</th>
-                      <th>Out-of-Sample (CV)</th>
-                      <th>Overfitting</th>
+                      <th style={{ textAlign: 'left',color:'black' }}>Metric</th>
+                      <th style={{color:'black'}}>In-Sample (Train)</th>
+                      <th style={{color:'black'}}>Out-of-Sample (CV)</th>
+                      <th style={{color:'black'}}>Overfitting</th>
                     </tr>
                   </thead>
                   <tbody>

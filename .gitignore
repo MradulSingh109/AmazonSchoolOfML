@@ -23,6 +23,5 @@ node_modules/
 frontend/node_modules/
 
 # Datasets and Models (cached/downloaded data)
-backend/data/raw/*.csv
-backend/data/processed/*.csv
-backend/models/*.pkl
+backend/data/
+backend/models/

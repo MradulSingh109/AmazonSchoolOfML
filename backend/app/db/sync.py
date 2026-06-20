@@ -49,6 +49,12 @@ def sync_local_files_to_db(session: Session):
                 except Exception as e:
                     logger.error(f"Sync: Failed to process stock file {f}: {e}")
 
+    # Cleanup any incorrect "ITSM" symbol records previously created by faulty sync
+    try:
+        session.query(DBTrainedModel).filter(DBTrainedModel.symbol == 'ITSM').delete(synchronize_session=False)
+    except Exception as e:
+        logger.error(f"Sync: Failed to clean up malformed 'ITSM' symbol records: {e}")
+
     # 2. Sync Trained Models
     if os.path.exists(MODELS_DIR):
         for f in os.listdir(MODELS_DIR):
@@ -60,11 +66,16 @@ def sync_local_files_to_db(session: Session):
                         
                     # Parse symbol and type from filename
                     # Filename format: {symbol}_{model_type}.pkl or {symbol}_{model_type}_regime_aware.pkl
+                    # Or for ITSM: itsm_{symbol}_{model_type}.pkl
                     parts = f.replace('.pkl', '').split('_')
-                    symbol = parts[0].upper()
-                    
-                    regime_aware = m_data.get('regime_aware', False)
-                    model_type = m_data.get('model_type', 'random_forest') # fallback
+                    if parts[0].lower() == 'itsm':
+                        symbol = parts[1].upper()
+                        regime_aware = False
+                        model_type = f"ITSM_{m_data.get('model_type', 'linear_regression').upper()}"
+                    else:
+                        symbol = parts[0].upper()
+                        regime_aware = m_data.get('regime_aware', False)
+                        model_type = m_data.get('model_type', 'random_forest') # fallback
                     
                     # Check if already exists in DB
                     db_model = session.query(DBTrainedModel).filter(
@@ -93,6 +104,75 @@ def sync_local_files_to_db(session: Session):
                         session.add(db_model)
                 except Exception as e:
                     logger.error(f"Sync: Failed to process model file {f}: {e}")
+
+    # 3. Copy/Sync ORB RVOL backtests to orb_strategy_nifty_50 table
+    try:
+        from app.db.models import DBBacktest, DBORBStrategyNifty50
+        orb_backtests = session.query(DBBacktest).filter(DBBacktest.model_type == 'ORB_RVOL').all()
+        for ob in orb_backtests:
+            exists = session.query(DBORBStrategyNifty50).filter(
+                DBORBStrategyNifty50.symbol == ob.symbol,
+                DBORBStrategyNifty50.model_type == ob.model_type,
+                DBORBStrategyNifty50.total_return_pct == ob.total_return_pct,
+                DBORBStrategyNifty50.trades_count == ob.trades_count
+            ).first()
+            if not exists:
+                logger.info(f"Sync: Copying backtest record for {ob.symbol} to orb_strategy_nifty_50 table.")
+                new_orb_record = DBORBStrategyNifty50(
+                    model_id=ob.model_id,
+                    symbol=ob.symbol,
+                    model_type=ob.model_type,
+                    regime_aware=ob.regime_aware,
+                    n_regimes=ob.n_regimes,
+                    initial_capital=ob.initial_capital,
+                    short_style=ob.short_style,
+                    total_return_pct=ob.total_return_pct,
+                    cagr_pct=ob.cagr_pct,
+                    sharpe_ratio=ob.sharpe_ratio,
+                    max_drawdown_pct=ob.max_drawdown_pct,
+                    win_rate_pct=ob.win_rate_pct,
+                    trades_count=ob.trades_count,
+                    metrics_json=ob.metrics_json,
+                    created_at=ob.created_at
+                )
+                session.add(new_orb_record)
+    except Exception as e:
+        logger.error(f"Sync: Failed to copy backtest strategy data to orb_strategy_nifty_50: {e}")
+
+    # 4. Copy/Sync ITSM backtests to itsm_strategy table
+    try:
+        from app.db.models import DBBacktest, DBITSMStrategy
+        itsm_backtests = session.query(DBBacktest).filter(DBBacktest.model_type.like('ITSM_%')).all()
+        for ib in itsm_backtests:
+            exists = session.query(DBITSMStrategy).filter(
+                DBITSMStrategy.symbol == ib.symbol,
+                DBITSMStrategy.model_type == ib.model_type,
+                DBITSMStrategy.total_return_pct == ib.total_return_pct,
+                DBITSMStrategy.trades_count == ib.trades_count
+            ).first()
+            if not exists:
+                logger.info(f"Sync: Copying backtest record for {ib.symbol} to itsm_strategy table.")
+                metrics = ib.metrics_json or {}
+                new_itsm_record = DBITSMStrategy(
+                    model_id=ib.model_id,
+                    symbol=ib.symbol,
+                    model_type=ib.model_type,
+                    regime_aware=ib.regime_aware,
+                    initial_capital=ib.initial_capital,
+                    total_return_pct=ib.total_return_pct,
+                    cagr_pct=ib.cagr_pct,
+                    sharpe_ratio=ib.sharpe_ratio,
+                    sortino_ratio=float(metrics.get('sortino_ratio', 0.0)),
+                    max_drawdown_pct=ib.max_drawdown_pct,
+                    win_rate_pct=ib.win_rate_pct,
+                    trades_count=ib.trades_count,
+                    avg_trade_return_pct=float(metrics.get('avg_trade_return_pct', 0.0)),
+                    metrics_json=ib.metrics_json,
+                    created_at=ib.created_at
+                )
+                session.add(new_itsm_record)
+    except Exception as e:
+        logger.error(f"Sync: Failed to copy backtest strategy data to itsm_strategy: {e}")
 
     session.commit()
     logger.info("Local files synchronization completed.")

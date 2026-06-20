@@ -1,7 +1,11 @@
 import os
 import asyncio
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.db.session import get_db
+from app.db.models import DBTrainedModel, DBBacktest, DBITSMStrategy
 from app.core.features.itsm_feature_engineering import process_itsm_features
 from app.core.models.itsm_models import train_itsm_model
 from app.core.backtesting.itsm_backtester import run_itsm_backtest
@@ -44,7 +48,7 @@ async def api_process_features(payload: ITSMProcessFeaturesRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/train")
-async def api_train_model(payload: ITSMTrainRequest):
+async def api_train_model(payload: ITSMTrainRequest, db: AsyncSession = Depends(get_db)):
     logger.info(f"Received request to train ITSM model: {payload.model_type} on {payload.filename}")
     try:
         result = await asyncio.to_thread(
@@ -53,6 +57,37 @@ async def api_train_model(payload: ITSMTrainRequest):
             payload.model_type, 
             payload.hyperparameters
         )
+        
+        if result.get("success"):
+            symbol = payload.filename.split('_')[0].upper()
+            model_filename = result["filename"]
+            
+            stmt = select(DBTrainedModel).where(
+                DBTrainedModel.symbol == symbol,
+                DBTrainedModel.model_type == f"ITSM_{payload.model_type.upper()}",
+                DBTrainedModel.file_path == model_filename
+            )
+            db_res = await db.execute(stmt)
+            db_model = db_res.scalars().first()
+            
+            if not db_model:
+                db_model = DBTrainedModel(
+                    symbol=symbol,
+                    model_type=f"ITSM_{payload.model_type.upper()}",
+                    regime_aware=False,
+                    file_path=model_filename,
+                    metrics_json=result.get("test_metrics", {}),
+                    hyperparameters_json=payload.hyperparameters,
+                    latest_signals_path=payload.filename
+                )
+                db.add(db_model)
+            else:
+                db_model.metrics_json = result.get("test_metrics", {})
+                db_model.hyperparameters_json = payload.hyperparameters
+                db_model.latest_signals_path = payload.filename
+                
+            await db.commit()
+            
         return result
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -63,7 +98,7 @@ async def api_train_model(payload: ITSMTrainRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/backtest")
-async def api_run_backtest(payload: ITSMBacktestRequest):
+async def api_run_backtest(payload: ITSMBacktestRequest, db: AsyncSession = Depends(get_db)):
     logger.info(f"Received request to run ITSM backtest for model: {payload.model_filename}")
     try:
         result = await asyncio.to_thread(
@@ -79,6 +114,57 @@ async def api_run_backtest(payload: ITSMBacktestRequest):
             trailing_stop=payload.trailing_stop,
             transaction_cost_pct=payload.transaction_cost_pct
         )
+        
+        if result.get("success") or "metrics" in result:
+            symbol = payload.raw_filename.split('_')[0].upper()
+            
+            stmt = select(DBTrainedModel).where(
+                DBTrainedModel.symbol == symbol,
+                DBTrainedModel.file_path == payload.model_filename
+            )
+            db_res = await db.execute(stmt)
+            db_model = db_res.scalars().first()
+            
+            model_id = db_model.id if db_model else None
+            model_type_suffix = payload.model_filename.split('_')[-1].replace('.pkl', '').upper()
+            
+            db_backtest = DBBacktest(
+                model_id=model_id,
+                symbol=symbol,
+                model_type=f"ITSM_{model_type_suffix}",
+                regime_aware=False,
+                n_regimes=None,
+                initial_capital=payload.initial_capital,
+                short_style="flat",
+                total_return_pct=float(result['metrics']['total_return_pct']),
+                cagr_pct=float(result['metrics']['cagr_pct']),
+                sharpe_ratio=float(result['metrics']['sharpe_ratio']),
+                max_drawdown_pct=float(result['metrics']['max_drawdown_pct']),
+                win_rate_pct=float(result['metrics']['win_rate_pct']),
+                trades_count=int(result['metrics']['trades_count']),
+                metrics_json=result['metrics']
+            )
+            db.add(db_backtest)
+            
+            db_itsm = DBITSMStrategy(
+                model_id=model_id,
+                symbol=symbol,
+                model_type=f"ITSM_{model_type_suffix}",
+                regime_aware=False,
+                initial_capital=payload.initial_capital,
+                total_return_pct=float(result['metrics']['total_return_pct']),
+                cagr_pct=float(result['metrics']['cagr_pct']),
+                sharpe_ratio=float(result['metrics']['sharpe_ratio']),
+                sortino_ratio=float(result['metrics'].get('sortino_ratio', 0.0)),
+                max_drawdown_pct=float(result['metrics']['max_drawdown_pct']),
+                win_rate_pct=float(result['metrics']['win_rate_pct']),
+                trades_count=int(result['metrics']['trades_count']),
+                avg_trade_return_pct=float(result['metrics'].get('avg_trade_return_pct', 0.0)),
+                metrics_json=result['metrics']
+            )
+            db.add(db_itsm)
+            await db.commit()
+            
         return result
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))

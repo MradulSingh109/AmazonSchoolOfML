@@ -9,7 +9,8 @@ import SignalGeneration from './pages/SignalGeneration';
 import Backtesting from './pages/Backtesting';
 import ShapAnalysis from './pages/ShapAnalysis';
 import Strategies from './pages/Strategies';
-import StrategyDetail from './pages/StrategyDetail';
+import ORBStrategy from './pages/intraday_strategies/ORBStrategy';
+import ITSMStrategy from './pages/intraday_strategies/ITSMStrategy';
 import './App.css';
 import { Hero } from '@/components/ui/animated-hero';
 
@@ -175,7 +176,8 @@ export default function App() {
           <Route path="/backtest" element={<Backtesting refreshTrigger={refreshTrigger} />} />
           <Route path="/shap" element={<ShapAnalysis refreshTrigger={refreshTrigger} />} />
           <Route path="/strategies" element={<Strategies />} />
-          <Route path="/strategies/:strategyId" element={<StrategyDetail />} />
+          <Route path="/strategies/orb" element={<ORBStrategy />} />
+          <Route path="/strategies/itsm" element={<ITSMStrategy />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

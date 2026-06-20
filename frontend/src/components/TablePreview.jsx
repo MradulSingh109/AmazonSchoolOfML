@@ -8,24 +8,24 @@ export default function TablePreview({ prefix, columns, headData, tailData, tota
 
     if (col === 'Target') {
       return val === 1 ? (
-        <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>1 (UP)</span>
+        <span style={{ color: '#16a34a', fontWeight: 700 }}>1 (UP)</span>
       ) : (
-        <span style={{ color: 'var(--text-secondary)' }}>0 (DOWN/FLAT)</span>
+        <span style={{ color: '#4b5563' }}>0 (DOWN/FLAT)</span>
       );
     }
 
     if (col === 'Signal') {
-      if (val === 1) return <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>BUY (1)</span>;
-      if (val === -1) return <span style={{ color: 'var(--accent-red)', fontWeight: 700 }}>SELL (-1)</span>;
-      return <span style={{ color: 'var(--text-secondary)' }}>FLAT (0)</span>;
+      if (val === 1) return <span style={{ color: '#16a34a', fontWeight: 700 }}>BUY (1)</span>;
+      if (val === -1) return <span style={{ color: '#dc2626', fontWeight: 700 }}>SELL (-1)</span>;
+      return <span style={{ color: '#4b5563' }}>FLAT (0)</span>;
     }
 
     if (col === 'Position_Change') {
-      if (val === 1) return <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>+1 (ENTER/LONG)</span>;
-      if (val === -1) return <span style={{ color: 'var(--accent-red)', fontWeight: 700 }}>-1 (EXIT/SHORT)</span>;
-      if (val === 2) return <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>+2 (REVERSE LONG)</span>;
-      if (val === -2) return <span style={{ color: 'var(--accent-red)', fontWeight: 700 }}>-2 (REVERSE SHORT)</span>;
-      return <span style={{ color: 'var(--text-secondary)' }}>0 (HOLD)</span>;
+      if (val === 1) return <span style={{ color: '#16a34a', fontWeight: 700 }}>+1 (ENTER/LONG)</span>;
+      if (val === -1) return <span style={{ color: '#dc2626', fontWeight: 700 }}>-1 (EXIT/SHORT)</span>;
+      if (val === 2) return <span style={{ color: '#16a34a', fontWeight: 700 }}>+2 (REVERSE LONG)</span>;
+      if (val === -2) return <span style={{ color: '#dc2626', fontWeight: 700 }}>-2 (REVERSE SHORT)</span>;
+      return <span style={{ color: '#4b5563' }}>0 (HOLD)</span>;
     }
 
     if (col === 'Volume' || col === 'Vol_MA') {
@@ -38,7 +38,7 @@ export default function TablePreview({ prefix, columns, headData, tailData, tota
 
     if (['Return_1D', 'Return_5D', 'Return_10D'].includes(col)) {
       const num = (Number(val) * 100).toFixed(2);
-      const color = num >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      const color = num >= 0 ? '#16a34a' : '#dc2626';
       const sign = num >= 0 ? '+' : '';
       return <span style={{ color }}>{sign}{num}%</span>;
     }
@@ -51,41 +51,41 @@ export default function TablePreview({ prefix, columns, headData, tailData, tota
   };
 
   return (
-    <div className="card section-gap animate-fade-in" style={{ marginTop: '24px' }}>
-      <div className="card-header">
+    <div className="card section-gap animate-fade-in" style={{ marginTop: '24px', background: '#ffffff', color: '#000000', borderRadius: '12px', padding: '24px', border: '1px solid #e4e4e7' }}>
+      <div className="card-header" style={{ marginBottom: '20px' }}>
         <div>
-          <h2>Dataset Preview</h2>
-          <span id={`table-subtitle-${prefix}`}>
+          <h2 style={{ color: '#000000', margin: '0 0 4px 0', fontSize: '18px', fontWeight: 700 }}>Dataset Preview</h2>
+          <span id={`table-subtitle-${prefix}`} style={{ color: '#71717a', fontSize: '13px' }}>
             Showing first {headData.length} & last {tailData.length} of {totalRows.toLocaleString()} rows
           </span>
         </div>
       </div>
-      <div className="table-wrapper">
-        <table>
+      <div className="table-wrapper" style={{ background: '#ffffff', borderRadius: '8px', overflowX: 'auto', border: '1px solid #e4e4e7' }}>
+        <table style={{ background: '#ffffff', color: '#000000', width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr>
+            <tr style={{ background: '#f4f4f5', borderBottom: '2px solid #e4e4e7' }}>
               {columns.map((col) => (
-                <th key={col}>{col}</th>
+                <th key={col} style={{ color: '#18181b', padding: '12px 16px', fontWeight: 600, textAlign: 'left', fontSize: '13px', borderBottom: '2px solid #e4e4e7' }}>{col}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {headData.map((row, idx) => (
-              <tr key={`head-${idx}`}>
+              <tr key={`head-${idx}`} style={{ borderBottom: '1px solid #e4e4e7', background: idx % 2 === 0 ? '#ffffff' : '#fafafa' }}>
                 {columns.map((col) => (
-                  <td key={col}>{formatTableCell(col, row[col])}</td>
+                  <td key={col} style={{ padding: '12px 16px', fontSize: '13px', color: '#18181b' }}>{formatTableCell(col, row[col])}</td>
                 ))}
               </tr>
             ))}
-            <tr>
-              <td colSpan={columns.length} className="table-ellipsis">
+            <tr style={{ background: '#ffffff' }}>
+              <td colSpan={columns.length} className="table-ellipsis" style={{ textAlign: 'center', padding: '8px', color: '#71717a', fontSize: '16px', fontWeight: 'bold' }}>
                 ⋯
               </td>
             </tr>
             {tailData.map((row, idx) => (
-              <tr key={`tail-${idx}`}>
+              <tr key={`tail-${idx}`} style={{ borderBottom: '1px solid #e4e4e7', background: idx % 2 === 0 ? '#ffffff' : '#fafafa' }}>
                 {columns.map((col) => (
-                  <td key={col}>{formatTableCell(col, row[col])}</td>
+                  <td key={col} style={{ padding: '12px 16px', fontSize: '13px', color: '#18181b' }}>{formatTableCell(col, row[col])}</td>
                 ))}
               </tr>
             ))}

@@ -1,0 +1,591 @@
+--- Page 1 ---
+Opening  Range  Breakout  with  Relative  
+Volume
+ 
+Confirmation
+ 
+(ORB-RVOL)
+ 
+Strategy  Research  Document  (SRD)  
+Version  
+1.0  
+Strategy  Type  
+Intraday  Momentum  
+Market  
+NSE  Equities  (NIFTY  500  Universe  Preferred)  
+Timeframe  
+5-Minute  Bars  
+Holding  Period  
+Intraday  Only  (No  Overnight  Positions)  
+ 
+1.  Executive  Summary  
+The  Opening  Range  Breakout  with  Relative  Volume  Confirmation  (ORB-RVOL)  strategy  is  an  
+intraday
+ 
+momentum
+ 
+strategy
+ 
+designed
+ 
+to
+ 
+capture
+ 
+directional
+ 
+institutional
+ 
+order
+ 
+flow
+ 
+generated
+ 
+by
+ 
+overnight
+ 
+information
+ 
+events
+ 
+and
+ 
+concentrated
+ 
+execution
+ 
+activity
+ 
+during
+ 
+the
+ 
+market
+ 
+open.
+ 
+The  strategy  identifies  stocks  experiencing  unusually  high  opening  participation  through  
+Relative
+ 
+Volume
+ 
+(RVOL)
+ 
+analysis
+ 
+and
+ 
+enters
+ 
+positions
+ 
+only
+ 
+after
+ 
+a
+ 
+confirmed
+ 
+breakout
+ 
+from
+ 
+the
+ 
+opening
+ 
+range.
+ 
+By
+ 
+combining
+ 
+volume
+ 
+confirmation,
+ 
+volatility
+ 
+regime
+ 
+filtering,
+ 
+disciplined
+ 
+risk
+ 
+management,
+ 
+and
+ 
+strict
+ 
+intraday
+ 
+exits,
+ 
+the
+ 
+strategy
+ 
+seeks
+ 
+to
+ 
+capture
+ 
+strong
+ 
+directional
+ 
+moves
+ 
+while
+ 
+minimizing
+ 
+exposure
+ 
+to
+ 
+false
+ 
+breakouts.
+ 
+--- Page 2 ---
+ 
+2.  Core  Market  Inefficiency  
+The  strategy  exploits  the  tendency  of  financial  markets  to  underreact  to  overnight  information.  
+Examples  include:  
+●  Earnings  releases  ●  Corporate  announcements  ●  Regulatory  developments  ●  Global  market  movements  ●  Macroeconomic  news  ●  Sector-specific  events  
+When  significant  information  arrives  outside  market  hours,  institutional  participants  frequently  
+require
+ 
+substantial
+ 
+time
+ 
+to
+ 
+execute
+ 
+large
+ 
+orders
+ 
+after
+ 
+the
+ 
+market
+ 
+opens.
+ 
+This  creates:  
+●  Elevated  opening  volume  ●  Persistent  directional  flows  ●  Delayed  price  discovery  ●  Momentum  continuation  throughout  the  trading  session  
+The  strategy  identifies  these  situations  through  abnormal  opening  volume  and  participates  only  
+after
+ 
+directional
+ 
+confirmation.
+ 
+ 
+3.  Trading  Universe  
+Eligible  Securities  
+Preferred  Universe:  
+●  NIFTY  500  Stocks  
+Alternative  Universe:  
+●  NSE  Large  Cap  Stocks  ●  NSE  Mid  Cap  Stocks  
+--- Page 3 ---
+ 
+Liquidity  Requirements  
+Minimum  Average  Daily  Value  Traded  (ADTV):  
+₹10  Crore  
+Minimum  Average  Daily  Volume:  
+500,000  shares  
+ 
+Exclusions  
+Avoid:  
+●  Illiquid  securities  ●  Stocks  under  ASM/GSM  restrictions  ●  Stocks  with  frequent  circuit  limits  ●  Penny  stocks  
+ 
+4.  Data  Requirements  
+Real-Time  Data  
+5-Minute  OHLCV  Data  
+Required  Fields:  
+Field  Type  
+Timestamp  Datetime  
+Open  Float  
+High  Float  
+Low  Float  
+--- Page 4 ---
+Close  Float  
+Volume  Integer   
+Historical  Data  
+Minimum  Lookback:  
+14  Trading  Days  
+Preferred:  
+30  Trading  Days  
+Required  Historical  Data:  
+●  Daily  OHLCV  ●  5-minute  volume  history  ●  India  VIX  values  
+ 
+5.  Session  Definitions  
+Event  Time  (IST)  
+Market  Open  09:15  
+Opening  Range  End  09:20  
+Entry  Window  Begins  09:20  
+Last  Entry  Time  14:30  
+Mandatory  Exit  15:15   
+6.  Opening  Range  Construction  
+The  Opening  Range  (OR)  is  defined  using  the  first  five-minute  candle  of  the  trading  session.  
+--- Page 5 ---
+Time  Interval:  
+09:15  →  09:20  
+ 
+Opening  Range  High  
+H_OR  =  High  of  first  5-minute  candle  
+ 
+Opening  Range  Low  
+L_OR  =  Low  of  first  5-minute  candle  
+ 
+Opening  Range  Width  
+ORW  =  H_OR  −  L_OR  
+ 
+Opening  Range  Percentage  
+ORW%  =  ((H_OR  −  L_OR)  /  Previous  Day  Close)  ×  100  
+ 
+7.  Relative  Volume  (RVOL)  
+Objective  
+Measure  whether  current  opening  activity  is  significantly  greater  than  normal  participation.  
+ 
+Opening  Volume  
+--- Page 6 ---
+V_today  =  Volume  of  today's  first  5-minute  candle  
+ 
+Historical  Baseline  
+Average  volume  of  the  first  five-minute  candle  over  the  previous  14  trading  sessions.  
+AvgVol14  =  Mean(V1,  V2,  ...  V14)  
+ 
+RVOL  Calculation  
+RVOL  =  V_today  /  AvgVol14  
+ 
+Qualification  Rule  
+RVOL  ≥  3.0  
+Only  stocks  meeting  this  threshold  become  eligible  for  trading.  
+ 
+8.  Volatility  Regime  Filter  
+The  strategy  performs  poorly  during  extremely  low-volatility  environments  where  mean  reversion  
+dominates.
+ 
+ 
+Input  
+India  VIX  Daily  Value  
+ 
+Rule  
+--- Page 7 ---
+Calculate  the  historical  volatility  percentile.  
+Trading  is  disabled  whenever:  
+India  VIX  <  Historical  20th  Percentile  
+ 
+Example  
+If:  
+20th  Percentile  VIX  =  11  
+and  
+Current  VIX  =  9.8  
+Then:  
+No  trades  are  permitted.  
+ 
+9.  Long  Entry  Conditions  
+A  long  trade  is  initiated  only  when  all  conditions  are  satisfied.  
+ 
+Condition  1  
+RVOL  ≥  3.0  
+ 
+Condition  2  
+A  5-minute  candle  closes  above  the  Opening  Range  High.  
+Close  >  H_OR  
+ 
+--- Page 8 ---
+Condition  3  
+Entire  candle  remains  above  Opening  Range.  
+Low  >  H_OR  
+ 
+Entry  Execution  
+Enter  at  the  open  of  the  next  candle.  
+Entry  Price  =  Next  Candle  Open  
+ 
+10.  Short  Entry  Conditions  
+A  short  trade  is  initiated  only  when  all  conditions  are  satisfied.  
+ 
+Condition  1  
+RVOL  ≥  3.0  
+ 
+Condition  2  
+Close  <  L_OR  
+ 
+Condition  3  
+High  <  L_OR  
+ 
+--- Page 9 ---
+Entry  Execution  
+Enter  at  the  open  of  the  next  candle.  
+Entry  Price  =  Next  Candle  Open  
+ 
+11.  Initial  Stop  Loss  
+The  strategy  uses  ATR-based  dynamic  risk  management.  
+ 
+ATR  Calculation  
+Daily  ATR(14)  
+True  Range:  
+TR  =  Max(  
+High
+ 
+−
+ 
+Low,
+ 
+|High
+ 
+−
+ 
+Previous
+ 
+Close|,
+ 
+|Low
+ 
+−
+ 
+Previous
+ 
+Close|
+ 
+)
+ 
+ATR14  =  Average(TR  over  14  days)  
+ 
+Long  Stop  
+Stop  =  Entry  −  (1.5  ×  ATR14)  
+ 
+Short  Stop  
+Stop  =  Entry  +  (1.5  ×  ATR14)  
+ 
+--- Page 10 ---
+12.  Narrow  Opening  Range  Exception  
+If:  
+ORW%  <  0.75%  
+Use  Opening  Range  boundaries  instead  of  ATR  stops.  
+ 
+Long  Trade  
+Stop  =  L_OR  
+ 
+Short  Trade  
+Stop  =  H_OR  
+ 
+13.  Risk  Unit  (R)  
+Define:  
+R  =  |Entry  −  Stop|  
+This  represents  the  initial  trade  risk.  
+ 
+Example  
+Entry  =  ₹500  
+Stop  =  ₹490  
+R  =  ₹10  
+ 
+--- Page 11 ---
+14.  Profit  Management  
+Initial  Objective  
+Target  =  3R  
+Long:  
+Target  =  Entry  +  (3  ×  R)  
+Short:  
+Target  =  Entry  −  (3  ×  R)  
+ 
+Dynamic  Trailing  System  
+At  1.5R  Profit  
+Move  stop  to  breakeven.  
+ 
+At  2R  Profit  
+Trail  stop  using  1  ATR.  
+ 
+Beyond  2R  
+Continue  ATR  trailing  until  exit.  
+ 
+15.  Failed  Breakout  Exit  
+Breakouts  occasionally  fail  and  re-enter  the  opening  range.  
+To  identify  failed  breakouts:  
+--- Page 12 ---
+If  the  stock  closes  back  inside  the  opening  range  for  three  consecutive  bars:  
+Exit  immediately.  
+ 
+Long  Trade  Failure  
+L_OR  <  Close  <  H_OR  
+for  3  consecutive  bars.  
+ 
+Short  Trade  Failure  
+L_OR  <  Close  <  H_OR  
+for  3  consecutive  bars.  
+ 
+16.  End-of-Day  Exit  
+All  positions  must  be  liquidated  before  market  close.  
+Mandatory  Exit  Time:  
+15:15  IST  
+No  overnight  holding  is  permitted.  
+ 
+17.  Position  Sizing  
+Risk  Per  Trade  
+Maximum  Risk:  
+1%  of  Total  Capital  
+--- Page 13 ---
+ 
+Example  
+Capital  =  ₹10,00,000  
+Maximum  Risk  =  ₹10,000  
+ 
+Quantity  Formula  
+Quantity  =  Risk  Capital  /  R  
+ 
+Example  
+Risk  Capital  =  ₹10,000  
+R  =  ₹5  
+Quantity  =  2,000  Shares  
+ 
+18.  Portfolio-Level  Constraints  
+Maximum  Open  Positions  
+4  simultaneous  positions  
+ 
+Sector  Exposure  Control  
+Maximum:  
+2  positions  per  sector  
+Examples:  
+--- Page 14 ---
+●  Banking  ●  IT  ●  Pharma  ●  Metals  ●  Auto  
+This  reduces  concentration  risk.  
+ 
+19.  Transaction  Cost  Assumptions  
+Backtesting  must  include:  
+Slippage  
+Entry  Slippage:  0.05%  
+Exit  Slippage:  0.05%  
+Round  Trip  Slippage:  0.10%  
+ 
+Trading  Costs  
+Include:  
+●  Brokerage  ●  STT  ●  Exchange  Charges  ●  GST  ●  SEBI  Charges  ●  Stamp  Duty  
+Use  realistic  NSE  intraday  assumptions.  
+ 
+20.  Performance  Metrics  
+The  backtesting  engine  must  generate:  
+--- Page 15 ---
+Return  Metrics  
+●  CAGR  ●  Annualized  Return  ●  Monthly  Return  
+ 
+Risk  Metrics  
+●  Maximum  Drawdown  ●  Volatility  
+ 
+Risk-Adjusted  Metrics  
+●  Sharpe  Ratio  ●  Sortino  Ratio  ●  Calmar  Ratio  
+ 
+Trade  Statistics  
+●  Win  Rate  ●  Profit  Factor  ●  Average  Win  ●  Average  Loss  ●  Expectancy  ●  Payoff  Ratio  
+ 
+Execution  Statistics  
+●  Average  Holding  Time  ●  Average  Slippage  ●  Trades  Per  Day  ●  Capacity  Utilization  
+ 
+--- Page 16 ---
+21.  Recommended  Enhancements  
+The  following  filters  can  materially  improve  robustness:  
+VWAP  Confirmation  
+Longs  only  above  VWAP.  
+Shorts  only  below  VWAP.  
+ 
+Gap  Filter  
+Trade  only  stocks  with:  
+Absolute  Gap  ≥  1%  
+ 
+Stronger  RVOL  Threshold  
+Increase  threshold:  
+RVOL  ≥  4  
+ 
+Market  Trend  Filter  
+Longs  only  when  NIFTY  50  >  20  EMA.  
+Shorts  only  when  NIFTY  50  <  20  EMA.  
+ 
+Candidate  Ranking  
+Rank  eligible  stocks  by:  
+Score  =  RVOL  ×  Gap%  
+Trade  only  the  highest-ranked  opportunities  each  session.  
+ 
+--- Page 17 ---
+Expected  Strategy  Characteristics  
+Holding  Period:  
+30
+ 
+Minutes
+ 
+–
+ 
+5
+ 
+Hours
+ 
+Average  Trades:  
+1–4
+ 
+Trades
+ 
+Per
+ 
+Day
+ 
+Expected  Win  Rate:  
+40–55%
+ 
+Target  Profit  Factor:  
+1.5–2.0+
+ 
+Target  Sharpe  Ratio:  
+1.2–2.0+
+ 
+Primary  Risk:  
+False
+ 
+breakouts
+ 
+during
+ 
+low-volatility
+ 
+or
+ 
+mean-reverting
+ 
+environments.
+ 
+Primary  Edge:  
+Institutional
+ 
+participation
+ 
+identified
+ 
+through
+ 
+abnormal
+ 
+opening
+ 
+volume
+ 
+and
+ 
+directional
+ 
+opening-range
+ 
+expansion.
+ 
+ 

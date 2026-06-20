@@ -42,7 +42,8 @@ def train_itsm_model(
         
     # Feature columns and target
     feature_cols = [
-        'onfh', 'middle_return', 'gap'
+        'onfh', 'middle_return', 'gap',
+        'intraday_volatility', 'relative_volume', 'vwap_dist'
     ]
     target_col = 'lh_return'
     

@@ -1,7 +1,7 @@
 import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import data, features, models, signals, backtest, explain, regime, itsm
+from app.api import data, features, models, signals, backtest, explain, regime, itsm, orb
 from app.api.errors import setup_exception_handlers
 from app.core.logging import get_logger
 
@@ -73,6 +73,7 @@ app.include_router(signals.router, prefix="/api/v1/signals")
 app.include_router(backtest.router, prefix="/api/v1/backtest")
 app.include_router(explain.router, prefix="/api/v1/explain")
 app.include_router(itsm.router, prefix="/api/v1/itsm", tags=["ITSM Strategy"])
+app.include_router(orb.router, prefix="/api/v1/orb", tags=["ORB Strategy"])
 
 #We are using the versioned api routes and the legacy routes to create a smooth transition and to keep the
 #routes separated. In future we need to update the app, we cannot just start writing new routes, it will
@@ -89,6 +90,7 @@ app.include_router(signals.router, prefix="/api/signals")
 app.include_router(backtest.router, prefix="/api/backtest")
 app.include_router(explain.router, prefix="/api/explain")
 app.include_router(itsm.router, prefix="/api/itsm", tags=["ITSM Strategy"])
+app.include_router(orb.router, prefix="/api/orb", tags=["ORB Strategy"])
 
 @app.get("/")
 def read_root():

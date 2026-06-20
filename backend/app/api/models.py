@@ -293,7 +293,8 @@ async def api_train_model(payload: TrainModelRequest, db: AsyncSession = Depends
 @router.get("/list")
 async def api_list_models(db: AsyncSession = Depends(get_db)):
     logger.debug("Listing all ML models from DB")
-    stmt = select(DBTrainedModel)
+    # Exclude ITSM strategy models from the standard ML pipeline lists
+    stmt = select(DBTrainedModel).where(~DBTrainedModel.model_type.like('ITSM_%'))
     db_res = await db.execute(stmt)
     models_db = db_res.scalars().all()
     

@@ -237,7 +237,7 @@ export default function MarketRegimes({ refreshTrigger }) {
                 <h2>Regime Timeline Chart</h2>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '12px' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'rgba(16, 185, 129, 0.4)' }}></span>
+                    <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'rgba(12, 255, 174, 0.4)' }}></span>
                     Bull Regime
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -245,14 +245,14 @@ export default function MarketRegimes({ refreshTrigger }) {
                     Sideways Regime
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'rgba(239, 68, 68, 0.4)' }}></span>
+                    <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'rgba(255, 0, 0, 0.4)' }}></span>
                     Bear Regime
                   </span>
                 </div>
               </div>
             </div>
 
-            <div style={{ height: '350px', position: 'relative' }}>
+            <div style={{ height: '350px', position: 'relative', backgroundColor: '#ffffff', borderRadius: '8px', padding: '16px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}>
               <AnalyticsChart
                 type="line"
                 data={getPriceChartData()}
@@ -265,7 +265,7 @@ export default function MarketRegimes({ refreshTrigger }) {
                     y: { grid: { color: 'rgba(0, 0, 0, 0.05)' } }
                   }
                 }}
-                height={350}
+                height={318}
               />
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function MarketRegimes({ refreshTrigger }) {
                   key={regime.name} 
                   className="card"
                   style={{
-                    border: `1px solid ${currentTheme.border}`,
+                    // border: `.5px solid #ffffffff`,
                     background: `linear-gradient(135deg, var(--card-bg), ${currentTheme.bg})`
                   }}
                 >
@@ -338,15 +338,15 @@ export default function MarketRegimes({ refreshTrigger }) {
         </div>
 
         <div className="table-wrapper">
-          <table>
+          <table style={{background:'black'}}>
             <thead>
-              <tr>
-                <th>Stock</th>
-                <th>Method</th>
-                <th>Clusters (K)</th>
-                <th>Bear Count</th>
-                <th>Sideways Count</th>
-                <th>Bull Count</th>
+              <tr style={{background:'white'}}>
+                <th style={{color:'black'}}>Stock</th>
+                <th style={{color:'black'}}>Method</th>
+                <th style={{color:'black'}}>Clusters (K)</th>
+                <th style={{color:'black'}}>Bear Count</th>
+                <th style={{color:'black'}}>Sideways Count</th>
+                <th style={{color:'black'}}>Bull Count</th>
               </tr>
             </thead>
             <tbody>

@@ -110,14 +110,12 @@ def run_itsm_backtest(
         atr = float(row['atr14'])
         
         # Stop loss distance and sizing
-        stop_dist = 0.75 * atr if atr > 0 else 0.01 * entry_price
+        stop_dist = .75 * atr if atr > 0 else 0.01 * entry_price
         stop_price = entry_price - stop_dist if signal == 1 else entry_price + stop_dist
         
-        # Position sizing (risk 2% of current capital, capped by cash/no leverage)
-        risk_amount = capital * risk_per_trade_pct
-        raw_qty = int(risk_amount / stop_dist) if stop_dist > 0 else 1
+        # Position sizing (allocate maximum available capital)
         max_qty = int(capital / entry_price) if entry_price > 0 else 0
-        quantity = min(raw_qty, max_qty)
+        quantity = max_qty
         
         # If we cannot afford even 1 share with our capital, skip this trade
         if quantity <= 0:
